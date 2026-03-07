@@ -31,7 +31,8 @@ export function createPlayer(k) {
     ]);
 
     // -- Movement --
-    k.onUpdate("player", (p) => {
+    sunny.onUpdate(() => {
+        const p = sunny;
         const spd = PLAYER.SPEED * k.dt();
 
         if (k.isKeyDown("left") || k.isKeyDown("a")) p.pos.x -= spd;
@@ -65,6 +66,7 @@ export function createPlayer(k) {
 
     // -- Gaon Cannon (Space) --
     k.onKeyDown("space", () => {
+        if (!sunny.exists()) return;
         const p = sunny;
         if (p.gaonCooldown <= 0) {
             p.gaonCooldown = GAON_CANNON.FIRE_RATE;
@@ -74,6 +76,7 @@ export function createPlayer(k) {
 
     // -- Coup de Burst (E) --
     k.onKeyPress("e", () => {
+        if (!sunny.exists()) return;
         const p = sunny;
         if (p.coupCooldown <= 0) {
             p.coupCooldown = COUP_DE_BURST.COOLDOWN;
