@@ -2,6 +2,7 @@
 // Victory Scene — Game Complete
 // ============================================
 import { GAME } from "../config.js";
+import { createWoodenButton } from "../ui/components.js";
 
 export function victoryScene(k) {
     return ({ score = 0 } = {}) => {
@@ -30,26 +31,70 @@ export function victoryScene(k) {
 
         // Title
         k.add([
-            k.text("🏴‍☠️ VITÓRIA!", { size: 48 }),
+            k.text("🏴‍☠️ VITÓRIA!", { size: 36, font: "Bangers" }),
+            k.scale(2),
             k.color(255, 215, 0),
-            k.pos(GAME.WIDTH / 2, 120),
+            k.pos(GAME.WIDTH / 2, 80),
             k.anchor("center"),
+            k.z(10),
+        ]);
+
+        // Title drop shadow
+        k.add([
+            k.text("🏴‍☠️ VITÓRIA!", { size: 36, font: "Bangers" }),
+            k.scale(2),
+            k.color(60, 40, 0),
+            k.pos(GAME.WIDTH / 2 + 3, 80 + 3),
+            k.anchor("center"),
+            k.z(9),
         ]);
 
         k.add([
-            k.text("O Thousand Sunny conquistou\na Grand Line!", { size: 20, align: "center" }),
+            k.text("O Thousand Sunny conquistou\na Grand Line!", { size: 24, align: "center", font: "Bangers" }),
             k.color(200, 180, 120),
-            k.pos(GAME.WIDTH / 2, 190),
+            k.pos(GAME.WIDTH / 2, 160),
             k.anchor("center"),
         ]);
+
+        // LocalStorage Highest Bounty logic
+        const currentBounty = score * 1000;
+        let highestBounty = parseInt(localStorage.getItem("highestBounty") || "0");
+        let isNewRecord = false;
+
+        if (currentBounty > highestBounty) {
+            highestBounty = currentBounty;
+            localStorage.setItem("highestBounty", highestBounty.toString());
+            isNewRecord = true;
+        }
+
+        const formatBounty = (val) => Intl.NumberFormat('en-US').format(val);
 
         // Score
         k.add([
-            k.text(`Score Total: ${score}`, { size: 28 }),
+            k.text(`Bounty Final: ฿ ${formatBounty(currentBounty)}`, { size: 20, font: "Bangers" }),
+            k.scale(2),
             k.color(255, 215, 0),
-            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 20),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2),
             k.anchor("center"),
         ]);
+
+        k.add([
+            k.text(`Highest Bounty: ฿ ${formatBounty(highestBounty)}`, { size: 18, font: "Outfit" }),
+            k.color(isNewRecord ? [255, 100, 100] : [200, 200, 200]),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 40),
+            k.anchor("center"),
+        ]);
+
+        if (isNewRecord) {
+            k.add([
+                k.text("NEW RECORD!", { size: 16, font: "Bangers" }),
+                k.scale(2),
+                k.color(255, 50, 50),
+                k.pos(GAME.WIDTH / 2 + 160, GAME.HEIGHT / 2),
+                k.anchor("center"),
+                k.rotate(15),
+            ]);
+        }
 
         // One Piece found text
         const opText = k.add([
@@ -68,34 +113,35 @@ export function victoryScene(k) {
             }
         });
 
-        // Play again
+        // Play again & Menu Buttons
         k.wait(2, () => {
-            const btn = k.add([
-                k.rect(200, 45, { radius: 10 }),
-                k.color(200, 50, 30),
-                k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 100),
-                k.anchor("center"),
-                k.area(),
+            // Container to fade both buttons in together
+            const btnContainer = k.add([
+                k.opacity(0),
             ]);
 
-            k.add([
-                k.text("Jogar de Novo", { size: 18 }),
-                k.color(255, 255, 255),
-                k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 100),
-                k.anchor("center"),
-            ]);
+            k.tween(0, 1, 1, (v) => btnContainer.opacity = v);
 
-            btn.onHover(() => {
-                btn.color = k.Color.fromArray([240, 80, 50]);
-                k.setCursor("pointer");
-            });
-            btn.onHoverEnd(() => {
-                btn.color = k.Color.fromArray([200, 50, 30]);
-                k.setCursor("default");
-            });
+            // -- Retry Button (Wooden Plank) --
+            const retryBtn = createWoodenButton(
+                k,
+                "🔄 Jogar de Novo",
+                k.vec2(GAME.WIDTH / 2, GAME.HEIGHT - 120),
+                () => k.go("game", 0)
+            );
+            btnContainer.add(retryBtn);
 
-            btn.onClick(() => k.go("menu"));
-            k.onKeyPress("enter", () => k.go("menu"));
+            k.onKeyPress("enter", () => k.go("game", 0));
+
+            // -- Menu Button (Wooden Plank) --
+            const menuBtn = createWoodenButton(
+                k,
+                "Menu",
+                k.vec2(GAME.WIDTH / 2, GAME.HEIGHT - 60),
+                () => k.go("menu"),
+                { width: 180, height: 40, textSize: 22 }
+            );
+            btnContainer.add(menuBtn);
         });
     };
 }

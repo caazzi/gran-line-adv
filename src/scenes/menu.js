@@ -2,6 +2,7 @@
 // Menu Scene — Title Screen
 // ============================================
 import { GAME } from "../config.js";
+import { createWoodenButton } from "../ui/components.js";
 
 let bgmStarted = false;
 
@@ -38,25 +39,50 @@ export function menuScene(k) {
         ]);
 
         // -- Title --
+        // Render at half size and scale to prevent custom font bounding box clipping
         k.add([
-            k.text("GRAN LINE", { size: 52 }),
+            k.text("GRAN LINE", { size: 32, font: "Bangers" }),
+            k.scale(2),
             k.color(255, 215, 0),
-            k.pos(GAME.WIDTH / 2, 120),
+            k.pos(GAME.WIDTH / 2, 110),
             k.anchor("center"),
+            k.z(10),
+        ]);
+
+        // Title drop shadow
+        k.add([
+            k.text("GRAN LINE", { size: 32, font: "Bangers" }),
+            k.scale(2),
+            k.color(30, 20, 10),
+            k.pos(GAME.WIDTH / 2 + 3, 110 + 3),
+            k.anchor("center"),
+            k.z(9),
         ]);
 
         k.add([
-            k.text("ADVENTURE", { size: 36 }),
-            k.color(255, 160, 30),
-            k.pos(GAME.WIDTH / 2, 170),
+            k.text("ADVENTURE", { size: 24, font: "Bangers" }),
+            k.scale(2),
+            k.color(255, 100, 30),
+            k.pos(GAME.WIDTH / 2, 175),
             k.anchor("center"),
+            k.z(10),
+        ]);
+
+        // Subtitle drop shadow
+        k.add([
+            k.text("ADVENTURE", { size: 24, font: "Bangers" }),
+            k.scale(2),
+            k.color(40, 10, 5),
+            k.pos(GAME.WIDTH / 2 + 3, 175 + 3),
+            k.anchor("center"),
+            k.z(9),
         ]);
 
         // Subtitle
         k.add([
-            k.text("A Thousand Sunny Voyage", { size: 16 }),
+            k.text("A Thousand Sunny Voyage", { size: 18, font: "Outfit" }),
             k.color(150, 200, 255),
-            k.pos(GAME.WIDTH / 2, 210),
+            k.pos(GAME.WIDTH / 2, 225),
             k.anchor("center"),
         ]);
 
@@ -80,34 +106,8 @@ export function menuScene(k) {
             shipGroup.pos.y = shipY + Math.sin(floatT * 1.5) * 8;
         });
 
-        // -- Start Button --
-        const btnY = GAME.HEIGHT - 110;
-
-        const btn = k.add([
-            k.rect(200, 50, { radius: 12 }),
-            k.color(200, 50, 30),
-            k.pos(GAME.WIDTH / 2, btnY),
-            k.anchor("center"),
-            k.area(),
-            "start_btn",
-        ]);
-
-        const btnText = k.add([
-            k.text("⛵ ZARPAR!", { size: 22 }),
-            k.color(255, 255, 255),
-            k.pos(GAME.WIDTH / 2, btnY),
-            k.anchor("center"),
-        ]);
-
-        // Button hover effect
-        btn.onHover(() => {
-            btn.color = k.Color.fromArray([240, 80, 50]);
-            k.setCursor("pointer");
-        });
-        btn.onHoverEnd(() => {
-            btn.color = k.Color.fromArray([200, 50, 30]);
-            k.setCursor("default");
-        });
+        // -- Start Button (Wooden Plank) --
+        const btnY = GAME.HEIGHT - 120;
 
         function startGame() {
             if (!bgmStarted) {
@@ -117,8 +117,16 @@ export function menuScene(k) {
             k.go("game", 0);
         }
 
-        // Click to start
-        btn.onClick(() => startGame());
+        const btnGroup = createWoodenButton(
+            k,
+            "⛵ ZARPAR!",
+            k.vec2(GAME.WIDTH / 2, btnY),
+            () => {
+                btnGroup.scale = k.vec2(0.95); // click punch effect
+                k.wait(0.1, startGame);
+            },
+            { textSize: 28 }
+        );
 
         // Or press Enter/Space
         k.onKeyPress("enter", () => startGame());

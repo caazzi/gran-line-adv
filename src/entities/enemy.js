@@ -2,6 +2,7 @@
 // Enemy — Marine Ships
 // ============================================
 import { ENEMY, GAME } from "../config.js";
+import { Pools } from "../systems/pools.js";
 
 export function spawnEnemyLoop(k, levelConfig) {
     const [minInterval, maxInterval] = ENEMY.SPAWN_INTERVAL;
@@ -20,7 +21,12 @@ export function spawnEnemyLoop(k, levelConfig) {
 
 function spawnEnemy(k, levelConfig) {
     const speedMult = levelConfig.enemySpeedMult || 1;
+    const hpMult = levelConfig.enemyHpMult || 1;
+    const fireRateMult = levelConfig.enemyFireRateMult || 1;
     const y = k.rand(40, GAME.HEIGHT - 40);
+
+    const scaledHp = Math.ceil(ENEMY.HP * hpMult);
+    const scaledFireRate = ENEMY.FIRE_RATE * fireRateMult;
 
     const enemy = k.add([
         k.sprite("marine"),
@@ -32,8 +38,8 @@ function spawnEnemy(k, levelConfig) {
         k.offscreen({ destroy: true }),
         "enemy",
         {
-            hp: ENEMY.HP,
-            fireTimer: k.rand(0.5, ENEMY.FIRE_RATE),
+            hp: scaledHp,
+            fireTimer: k.rand(0.5, scaledFireRate),
         },
     ]);
 
@@ -41,7 +47,7 @@ function spawnEnemy(k, levelConfig) {
     enemy.onUpdate(() => {
         enemy.fireTimer -= k.dt();
         if (enemy.fireTimer <= 0) {
-            enemy.fireTimer = ENEMY.FIRE_RATE;
+            enemy.fireTimer = scaledFireRate;
             spawnEnemyBullet(k, enemy.pos);
         }
     });
@@ -50,15 +56,7 @@ function spawnEnemy(k, levelConfig) {
 }
 
 function spawnEnemyBullet(k, origin) {
-    k.add([
-        k.rect(12, 5),
-        k.color(...ENEMY.BULLET_COLOR),
-        k.pos(origin.x - ENEMY.WIDTH / 2, origin.y),
-        k.anchor("center"),
-        k.area(),
-        k.move(k.LEFT, ENEMY.BULLET_SPEED),
-        k.offscreen({ destroy: true }),
-        "enemy_bullet",
-        { damage: ENEMY.BULLET_DAMAGE },
-    ]);
+    const b = Pools.enemyBullets.get();
+    b.pos.x = origin.x - ENEMY.WIDTH / 2;
+    b.pos.y = origin.y;
 }

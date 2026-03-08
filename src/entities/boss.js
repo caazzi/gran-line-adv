@@ -2,6 +2,7 @@
 // Boss System
 // ============================================
 import { GAME } from "../config.js";
+import { Pools } from "../systems/pools.js";
 
 export function spawnBoss(k, bossConfig, onDefeated) {
     const spriteName = "boss_" + bossConfig.name.toLowerCase();
@@ -72,32 +73,47 @@ export function spawnBoss(k, bossConfig, onDefeated) {
         if (boss.pos.y > GAME.HEIGHT - 40) boss.moveDir = -1;
         if (boss.pos.y < 40) boss.moveDir = 1;
 
+        // Enrage check
+        const hpRatioForEnrage = boss.hp / boss.maxHp;
+        const isEnraged = hpRatioForEnrage <= (bossConfig.enrageThreshold || 0.3);
+
+        // Visual enrage pulse (red tint oscillation)
+        if (isEnraged && !boss._enraged) {
+            boss._enraged = true;
+            k.shake(8);
+        }
+        if (boss._enraged) {
+            const pulse = Math.sin(k.time() * 8) * 0.3 + 0.7;
+            hpBarFill.color = k.Color.fromArray([255, Math.floor(30 * pulse), Math.floor(30 * pulse)]);
+        }
+
+        // Select attack list based on enrage state
+        const currentAttacks = isEnraged ? (bossConfig.enrageAttacks || bossConfig.attacks) : bossConfig.attacks;
+        const currentTimer = isEnraged ? (bossConfig.enrageAttackTimer || 1.5) : (bossConfig.baseAttackTimer || 2.5);
+
         // Attack timer
         boss.attackTimer -= k.dt();
         if (boss.attackTimer <= 0) {
-            const attack = boss.attacks[boss.patternIndex % boss.attacks.length];
+            const attack = currentAttacks[boss.patternIndex % currentAttacks.length];
             boss.patternIndex++;
             performBossAttack(k, boss, attack);
-            boss.attackTimer = 2.5;
+            boss.attackTimer = currentTimer;
         }
 
         // Check defeat
         if (boss.hp <= 0) {
             // Explosion effect
             for (let i = 0; i < 8; i++) {
-                const particle = k.add([
-                    k.circle(k.rand(6, 16)),
-                    k.color(255, k.rand(100, 200), 0),
-                    k.pos(boss.pos.x + k.rand(-40, 40), boss.pos.y + k.rand(-30, 30)),
-                    k.anchor("center"),
-                    k.opacity(1),
-                    "particle",
-                ]);
-                particle.onUpdate(() => {
-                    particle.opacity -= 1.5 * k.dt();
-                    particle.pos.y -= 40 * k.dt();
-                    if (particle.opacity <= 0) particle.destroy();
-                });
+                const part = Pools.particles.get();
+                part.pos.x = boss.pos.x + k.rand(-40, 40);
+                part.pos.y = boss.pos.y + k.rand(-30, 30);
+                part.color = k.Color.fromArray([255, k.rand(100, 200), 0]);
+                part.opacity = 1;
+                part.scale.x = k.rand(0.8, 2.0);
+                part.scale.y = part.scale.x;
+                part.velX = k.rand(-30, 30);
+                part.velY = k.rand(-40, -10);
+                part.shrinkRate = 1.5;
             }
             k.shake(12);
             boss.destroy();
@@ -130,19 +146,14 @@ function performBossAttack(k, boss, attackType) {
             break;
 
         case "spread":
-            // Fire bullets in a fan pattern
+            // Fire bullets in a fan pattern using pooled bullets
             for (let angle = 150; angle <= 210; angle += 15) {
-                k.add([
-                    k.circle(6),
-                    k.color(255, 50, 50),
-                    k.pos(boss.pos.x - 36, boss.pos.y),
-                    k.anchor("center"),
-                    k.area(),
-                    k.move(angle, 250),
-                    k.offscreen({ destroy: true }),
-                    "enemy_bullet",
-                    { damage: 1 },
-                ]);
+                const b = Pools.enemyBullets.get();
+                b.pos.x = boss.pos.x - 36;
+                b.pos.y = boss.pos.y;
+                // Store angle for custom movement in pools.js onUpdate
+                b._spreadAngle = angle;
+                b._spreadSpeed = 250;
             }
             break;
 

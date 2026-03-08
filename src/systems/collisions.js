@@ -1,18 +1,55 @@
 import { GAME, ENEMY, PLAYER } from "../config.js";
 import { activateSoldierDock } from "../entities/player.js";
+import { Pools } from "./pools.js";
 
 export function setupCollisions(k, player, levelConfig) {
     // Player collects treasure
     k.onCollide("player", "treasure", (p, t) => {
         player.score += t.points;
 
-        // Akuma no Mi activates Soldier Dock
-        if (t.is("akuma")) {
-            activateSoldierDock(player);
+        // Apply Akuma no Mi effect based on tag
+        if (t.is("akuma") || t.is("mera_mera") || t.is("bari_bari") || t.is("pika_pika")) {
+            let flashColor = [148, 0, 211]; // Default purple
+
+            if (t.is("mera_mera")) {
+                player.meraMeraActive = true;
+                player.meraMeraTimer = 12; // MERA_MERA.DURATION
+                player.meraMeraFireTimer = 0;
+                flashColor = [255, 100, 20];
+            } else if (t.is("bari_bari")) {
+                player.bariBariActive = true;
+                player.bariBariTimer = 15; // BARI_BARI.DURATION
+                flashColor = [50, 255, 150];
+
+                // Visual shield directly on player
+                const shield = player.add([
+                    k.circle(PLAYER.WIDTH + 10),
+                    k.color(50, 255, 150),
+                    k.opacity(0.4),
+                    k.pos(0, 0),
+                    k.z(50),
+                ]);
+
+                let time = 0;
+                shield.onUpdate(() => {
+                    time += k.dt() * 5;
+                    shield.opacity = 0.3 + Math.sin(time) * 0.2;
+                    if (!player.bariBariActive) shield.destroy();
+                });
+
+            } else if (t.is("pika_pika")) {
+                player.pikaPikaActive = true;
+                player.pikaPikaTimer = 10; // PIKA_PIKA.DURATION
+                player.pikaPikaCooldown = 0;
+                flashColor = [255, 255, 50];
+            } else {
+                activateSoldierDock(player);
+            }
+
             // Visual flash effect
             const flashOverlay = k.add([
                 k.rect(GAME.WIDTH, GAME.HEIGHT),
-                k.color(148, 0, 211),
+                k.color(...flashColor),
                 k.opacity(0.4),
                 k.pos(0, 0),
                 k.fixed(),
@@ -26,20 +63,32 @@ export function setupCollisions(k, player, levelConfig) {
 
         // Collect particle effect
         for (let i = 0; i < 5; i++) {
-            const part = k.add([
-                k.circle(k.rand(2, 5)),
-                k.color(255, 215, 0),
-                k.pos(t.pos.x + k.rand(-10, 10), t.pos.y + k.rand(-10, 10)),
-                k.anchor("center"),
-                k.opacity(1),
-                "particle",
-            ]);
-            part.onUpdate(() => {
-                part.opacity -= 2 * k.dt();
-                part.pos.y -= 30 * k.dt();
-                if (part.opacity <= 0) part.destroy();
-            });
+            const part = Pools.particles.get();
+            part.pos.x = t.pos.x + k.rand(-10, 10);
+            part.pos.y = t.pos.y + k.rand(-10, 10);
+            part.color = k.Color.fromArray([255, 215, 0]);
+            part.opacity = 1;
+            part.scale.x = k.rand(0.4, 1.0);
+            part.scale.y = part.scale.x;
+            part.velX = 0;
+            part.velY = -30;
+            part.shrinkRate = 2;
         }
+
+        // Floating Score Popup
+        const scoreText = k.add([
+            k.text("+" + t.points.toString(), { size: 32, font: "Bangers" }),
+            k.color(255, 215, 0), // Gold
+            k.pos(t.pos.x, t.pos.y - 15),
+            k.anchor("center"),
+            k.opacity(1),
+            k.z(300),
+            k.move(k.UP, 60),
+        ]);
+        scoreText.onUpdate(() => {
+            scoreText.opacity -= 1.2 * k.dt();
+            if (scoreText.opacity <= 0) scoreText.destroy();
+        });
 
         t.destroy();
     });
@@ -57,22 +106,34 @@ export function setupCollisions(k, player, levelConfig) {
             }
         });
 
+        // Floating Damage Text
+        const dmgText = k.add([
+            k.text(bullet.damage.toString(), { size: 28, font: "Bangers" }),
+            k.color(255, 50, 50),
+            k.pos(enemy.pos.x, enemy.pos.y - 10),
+            k.anchor("center"),
+            k.opacity(1),
+            k.z(300),
+            k.move(k.UP, 80), // Float upwards
+        ]);
+
+        dmgText.onUpdate(() => {
+            dmgText.opacity -= 1.5 * k.dt();
+            if (dmgText.opacity <= 0) dmgText.destroy();
+        });
+
         // Small hit particles
         for (let i = 0; i < 3; i++) {
-            const part = k.add([
-                k.circle(k.rand(2, 4)),
-                k.color(255, 200, 100),
-                k.pos(bullet.pos.x, bullet.pos.y),
-                k.anchor("center"),
-                k.opacity(1),
-                "particle",
-            ]);
-            part.onUpdate(() => {
-                part.opacity -= 3 * k.dt();
-                part.pos.x += k.rand(-20, 20) * k.dt();
-                part.pos.y += k.rand(-20, 20) * k.dt();
-                if (part.opacity <= 0) part.destroy();
-            });
+            const part = Pools.particles.get();
+            part.pos.x = bullet.pos.x;
+            part.pos.y = bullet.pos.y;
+            part.color = k.Color.fromArray([255, 200, 100]);
+            part.opacity = 1;
+            part.scale.x = k.rand(0.4, 0.8);
+            part.scale.y = part.scale.x;
+            part.velX = k.rand(-20, 20);
+            part.velY = k.rand(-20, 20);
+            part.shrinkRate = 3;
         }
 
         bullet.destroy();
@@ -82,20 +143,38 @@ export function setupCollisions(k, player, levelConfig) {
             player.score += 20;
             k.play("explosion", { volume: 0.6 });
 
-            // Explosion particles
-            for (let i = 0; i < 4; i++) {
-                const p = k.add([
-                    k.circle(k.rand(4, 10)),
-                    k.color(255, k.rand(80, 180), 0),
-                    k.pos(enemy.pos.x + k.rand(-15, 15), enemy.pos.y + k.rand(-10, 10)),
+            // Heart Recovery Mechanic (Heal 1 up to MAX)
+            if (player.exists() && player.lives < PLAYER.LIVES) {
+                player.lives++;
+
+                // +1 HP Visual Effect
+                const healText = k.add([
+                    k.text("+1 ♥", { size: 16 }),
+                    k.color(50, 255, 100), // Green
+                    k.pos(enemy.pos.x, enemy.pos.y - 20),
                     k.anchor("center"),
                     k.opacity(1),
                     "particle",
                 ]);
-                p.onUpdate(() => {
-                    p.opacity -= 2 * k.dt();
-                    if (p.opacity <= 0) p.destroy();
+                healText.onUpdate(() => {
+                    healText.opacity -= 1.5 * k.dt();
+                    healText.pos.y -= 40 * k.dt();
+                    if (healText.opacity <= 0) healText.destroy();
                 });
+            }
+
+            // Explosion particles
+            for (let i = 0; i < 4; i++) {
+                const part = Pools.particles.get();
+                part.pos.x = enemy.pos.x + k.rand(-15, 15);
+                part.pos.y = enemy.pos.y + k.rand(-10, 10);
+                part.color = k.Color.fromArray([255, k.rand(80, 180), 0]);
+                part.opacity = 1;
+                part.scale.x = k.rand(0.8, 2.0);
+                part.scale.y = part.scale.x;
+                part.velX = 0;
+                part.velY = 0;
+                part.shrinkRate = 2;
             }
 
             enemy.destroy();
@@ -110,12 +189,13 @@ export function setupCollisions(k, player, levelConfig) {
 
     // Obstacle hits player
     k.onCollide("obstacle", "player", (obstacle, p) => {
+        // Knock up stream doesn't deal damage, it just thrusts
+        if (obstacle.is("knock_up_stream")) return;
+
         handlePlayerDamage(k, player, obstacle.damage, levelConfig);
 
-        // Destroy rocks/sea kings on impact, let whirlpools persist
-        if (!obstacle.is("whirlpool")) {
-            obstacle.destroy();
-        }
+        // Destroy rocks/sea kings on impact
+        obstacle.destroy();
     });
 
     // Enemy ship collides with player
@@ -127,11 +207,33 @@ export function setupCollisions(k, player, levelConfig) {
 }
 
 function handlePlayerDamage(k, player, damageAmount, levelConfig) {
-    if (player.invincible || !player.exists()) return;
+    if (player.invincible || !player.exists() || player.bariBariActive || player.pikaPikaActive) return;
 
     player.lives -= damageAmount;
     player.invincible = true;
     k.play("explosion", { volume: 0.4 });
+
+    // Player Floating Damage Text
+    const dmgText = k.add([
+        k.text("-" + damageAmount.toString(), { size: 36, font: "Bangers" }),
+        k.color(255, 0, 0),
+        k.pos(player.pos.x, player.pos.y - 20),
+        k.anchor("center"),
+        k.opacity(1),
+        k.z(300),
+        k.scale(1),
+    ]);
+
+    // Scale up and fade out effect
+    k.tween(1, 1.5, 0.5, (v) => dmgText.scale = k.vec2(v), k.easings.easeOutQuad);
+    const dmgLoop = k.onUpdate(() => {
+        dmgText.pos.y -= 30 * k.dt();
+        dmgText.opacity -= 2 * k.dt();
+        if (dmgText.opacity <= 0) {
+            dmgText.destroy();
+            dmgLoop.cancel();
+        }
+    });
 
     // Damage flash
     k.shake(4);

@@ -9,9 +9,11 @@ import { spawnBoss } from "../entities/boss.js";
 import { spawnObstacleLoop } from "../entities/obstacle.js";
 import { setupCollisions } from "../systems/collisions.js";
 import { setupHUD } from "../ui/hud.js";
+import { initPools, resetAllPools } from "../systems/pools.js";
+import { setupGameEvents } from "../systems/events.js";
 
 export function gameScene(k) {
-    return (levelIndex = 0) => {
+    return ({ levelIndex = 0, score = 0 } = {}) => {
         const levelConfig = LEVELS[levelIndex] || LEVELS[0];
 
         // ---- Background layers ----
@@ -23,13 +25,57 @@ export function gameScene(k) {
             k.z(-100),
         ]);
 
+        // ---- Object Pools ----
+        initPools(k);
+        resetAllPools(); // Clear stale objects from previous level
+
+        // ---- Event System ----
+        setupGameEvents(k);
+
         // ---- Player ----
-        const player = createPlayer(k);
+        const player = createPlayer(k, score);
 
         // ---- Spawning systems ----
-        spawnTreasureLoop(k, levelConfig.enemySpawnMult);
+        spawnTreasureLoop(k, levelConfig);
         spawnEnemyLoop(k, levelConfig);
         spawnObstacleLoop(k, levelConfig);
+
+        // ---- Level Intro Announcement ----
+        const levelTitle = k.add([
+            k.text(levelConfig.name.toUpperCase(), { size: 28, font: "Bangers" }),
+            k.scale(2),
+            k.color(255, 215, 0),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 - 30),
+            k.anchor("center"),
+            k.opacity(0),
+            k.fixed(),
+            k.z(200),
+        ]);
+
+        const levelSubtitle = k.add([
+            k.text(`Nível ${levelConfig.id}`, { size: 22, font: "Outfit" }),
+            k.color(200, 200, 255),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 20),
+            k.anchor("center"),
+            k.opacity(0),
+            k.fixed(),
+            k.z(200),
+        ]);
+
+        // Fade in, hold, fade out
+        k.tween(0, 1, 0.5, (v) => {
+            levelTitle.opacity = v;
+            levelSubtitle.opacity = v;
+        });
+        k.wait(2, () => {
+            k.tween(1, 0, 0.8, (v) => {
+                levelTitle.opacity = v;
+                levelSubtitle.opacity = v;
+            }).then(() => {
+                levelTitle.destroy();
+                levelSubtitle.destroy();
+            });
+        });
 
         // ---- Collisions ----
         setupCollisions(k, player, levelConfig);
@@ -97,7 +143,7 @@ export function gameScene(k) {
                         ]);
 
                         k.wait(3, () => {
-                            k.go("game", nextLevel);
+                            k.go("game", { levelIndex: nextLevel, score: player.score });
                         });
                     } else {
                         // Game complete!
@@ -107,22 +153,18 @@ export function gameScene(k) {
             }
         });
 
-        // Whirlpool pull effect (runs every frame)
+        // Knock Up Stream thrust effect (runs every frame)
         k.onUpdate(() => {
             if (player.lives <= 0) return;
 
-            k.get("whirlpool").forEach((whirlpool) => {
-                const dist = player.pos.dist(whirlpool.pos);
-                // If within pull radius (+ padding)
-                if (dist < whirlpool.radius * 2) {
-                    // Calculate pull vector towards center
-                    const pullDir = player.pos.angle(whirlpool.pos);
-                    const strength = (1 - (dist / (whirlpool.radius * 2))) * whirlpool.pullStrength;
+            k.get("knock_up_stream").forEach((stream) => {
+                // If player is inside the stream's X boundaries
+                const streamLeft = stream.pos.x - stream.width / 2;
+                const streamRight = stream.pos.x + stream.width / 2;
 
-                    // Move player using vector math
-                    // Note: Kaplay angle is in degrees, 0 is right. k.Vec2.fromAngle() gives directional unit vector.
-                    const moveVec = k.Vec2.fromAngle(pullDir).scale(strength * k.dt());
-                    player.pos = player.pos.add(moveVec);
+                if (player.pos.x > streamLeft && player.pos.x < streamRight) {
+                    // Pull player violently UPWARDS (negative Y is up)
+                    player.pos.y += stream.pullStrength * k.dt();
                 }
             });
         });

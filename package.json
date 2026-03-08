@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/bangers": "^5.2.8",
+    "@fontsource/outfit": "^5.2.8",
     "kaplay": "^3001.0.0"
   },
   "devDependencies": {

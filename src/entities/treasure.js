@@ -3,13 +3,14 @@
 // ============================================
 import { TREASURE, GAME } from "../config.js";
 
-export function spawnTreasureLoop(k, levelMult = 1) {
+export function spawnTreasureLoop(k, levelConfig = {}) {
+    const levelMult = levelConfig.enemySpawnMult || 1;
     const [minInterval, maxInterval] = TREASURE.SPAWN_INTERVAL;
 
     function scheduleNext() {
         const delay = k.rand(minInterval, maxInterval) / levelMult;
         k.wait(delay, () => {
-            spawnTreasure(k);
+            spawnTreasure(k, levelConfig);
             scheduleNext();
         });
     }
@@ -17,11 +18,38 @@ export function spawnTreasureLoop(k, levelMult = 1) {
     scheduleNext();
 }
 
-function spawnTreasure(k) {
+function spawnTreasure(k, levelConfig = {}) {
     const isAkuma = k.rand() < 0.15; // 15% chance for Akuma no Mi
-    const config = isAkuma ? TREASURE.AKUMA : TREASURE.COIN;
+    const coinValue = levelConfig.coinValue || TREASURE.COIN.POINTS;
+    const speedMult = levelConfig.treasureSpeedMult || 1;
+
+    let config = { ...TREASURE.COIN, POINTS: coinValue }; // Use level-scaled coin value
+    let spriteName = "coin";
+    let typeTag = "coin";
+
+    if (isAkuma) {
+        // Roll for specific fruit (Ultra Rare Pika Pika)
+        const roll = k.rand();
+        if (roll < 0.10) {
+            config = TREASURE.PIKA_PIKA;
+            spriteName = "akuma";
+            typeTag = "pika_pika";
+        } else if (roll < 0.40) {
+            config = TREASURE.AKUMA;
+            spriteName = "akuma";
+            typeTag = "akuma";
+        } else if (roll < 0.70) {
+            config = TREASURE.MERA_MERA;
+            spriteName = "akuma"; // Reuse base sprite but tint later
+            typeTag = "mera_mera";
+        } else {
+            config = TREASURE.BARI_BARI;
+            spriteName = "akuma"; // Reuse base sprite but tint later
+            typeTag = "bari_bari";
+        }
+    }
+
     const y = k.rand(30, GAME.HEIGHT - 30);
-    const spriteName = isAkuma ? "akuma" : "coin";
 
     const treasure = k.add([
         k.sprite(spriteName),
@@ -29,12 +57,17 @@ function spawnTreasure(k) {
         k.pos(GAME.WIDTH + 20, y),
         k.anchor("center"),
         k.area({ shape: new k.Rect(k.vec2(0), GAME.SPRITE_BASE_RES, GAME.SPRITE_BASE_RES) }),
-        k.move(k.LEFT, TREASURE.SPEED),
+        k.move(k.LEFT, TREASURE.SPEED * speedMult),
         k.offscreen({ destroy: true }),
-        isAkuma ? "akuma" : "coin",
+        typeTag, // Generic tag will be the specific fruit name
         "treasure",
         { points: config.POINTS },
     ]);
+
+    // Always tint the akuma sprite with the fruit's unique color
+    if (isAkuma) {
+        treasure.use(k.color(config.COLOR[0], config.COLOR[1], config.COLOR[2]));
+    }
 
     if (isAkuma) {
         // Pulsing glow effect

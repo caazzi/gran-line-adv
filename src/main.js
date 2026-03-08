@@ -18,7 +18,13 @@ const k = kaplay({
     crisp: true,
     canvas: document.querySelector("canvas") || undefined,
     global: false,
+    font: "Outfit", // Default font for normal text
 });
+
+// Load Fonts from local public directory
+k.loadFont("Bangers", "fonts/bangers.woff");
+k.loadFont("Outfit", "fonts/outfit.woff");
+
 // Load global assets
 k.loadSprite("sunny", "sprites/sunny.png");
 k.loadSprite("marine", "sprites/marine.png");
