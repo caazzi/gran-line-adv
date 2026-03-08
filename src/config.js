@@ -12,6 +12,20 @@ export const GAME = {
     TREASURE_SCALE: 2.0,
 };
 
+export const Z_LAYERS = {
+    BACKGROUND: -100,
+    POOL_IDLE: -10,
+    OBSTACLES: 10,
+    ENEMIES: 20,
+    PLAYER: 30,
+    PROJECTILES: 50,
+    EFFECTS: 100,
+    HUD: 200,
+    POST_HUD: 300,
+    ULTIMATES: 400,
+    TOP: 500
+};
+
 // -- Player (Thousand Sunny) --
 export const PLAYER = {
     SPEED: 280,
@@ -103,8 +117,8 @@ export const ENEMY = {
     BULLET_DAMAGE: 1,
     HP: 2,             // BASE hp (modified by level)
     SPAWN_INTERVAL: [2.0, 4.0],
-    WIDTH: 48,
-    HEIGHT: 28,
+    WIDTH: 64,
+    HEIGHT: 40,
     COLOR: [100, 100, 180], // marine blue-gray
     BULLET_COLOR: [255, 80, 80],
 };
@@ -124,17 +138,17 @@ export const LEVELS = [
         obstacles: ["rock"],      // Gentle intro to obstacles
         obstacleSpawnMult: 0.5,   // Half frequency
         boss: {
-            name: "Alvida",
+            name: "Miss Love Duck",
             hp: 20,
             speed: 80,
-            color: [200, 50, 100],
-            width: 72,
-            height: 48,
+            color: [255, 100, 150], // Pinkish for Alvida's ship
+            width: 80,
+            height: 60,
             attacks: ["charge", "spread"],
-            enrageAttacks: ["charge", "spread", "spread"], // More spread when low HP
-            enrageThreshold: 0.3,  // Enrage below 30% HP
+            enrageAttacks: ["charge", "spread", "spread"],
+            enrageThreshold: 0.3,
             baseAttackTimer: 2.5,
-            enrageAttackTimer: 1.5, // Faster attacks when enraged
+            enrageAttackTimer: 1.5,
         },
     },
     {
@@ -143,20 +157,20 @@ export const LEVELS = [
         duration: 75,
         enemySpeedMult: 1.3,
         enemySpawnMult: 1.2,
-        enemyHpMult: 1.5,         // Enemies are tougher
-        enemyFireRateMult: 0.8,   // Fire 20% faster
-        coinValue: 20,            // More rewarding
-        treasureSpeedMult: 1.2,   // Slightly faster drift
+        enemyHpMult: 1.5,
+        enemyFireRateMult: 0.8,
+        coinValue: 20,
+        treasureSpeedMult: 1.2,
         obstacles: ["rock", "whirlpool"],
         obstacleSpawnMult: 1.0,
         boss: {
-            name: "Smoker",
+            name: "Marine Warship",
             hp: 35,
             speed: 100,
             color: [180, 180, 180],
-            width: 80,
-            height: 52,
-            attacks: ["charge", "spread", "smoke_wave"],
+            width: 100,
+            height: 70,
+            attacks: ["charge", "spread", "smoke_wave"], // Keeping smoke wave as a "cannon barrage" equivalent
             enrageAttacks: ["smoke_wave", "spread", "charge", "smoke_wave"],
             enrageThreshold: 0.35,
             baseAttackTimer: 2.2,
@@ -169,24 +183,24 @@ export const LEVELS = [
         duration: 90,
         enemySpeedMult: 1.6,
         enemySpawnMult: 1.5,
-        enemyHpMult: 2.0,         // Enemies are very tough
-        enemyFireRateMult: 0.6,   // Fire 40% faster
-        coinValue: 30,            // Highest reward
-        treasureSpeedMult: 1.4,   // Fastest drift
+        enemyHpMult: 2.0,
+        enemyFireRateMult: 0.6,
+        coinValue: 30,
+        treasureSpeedMult: 1.4,
         obstacles: ["rock", "whirlpool", "sea_king"],
         obstacleSpawnMult: 1.3,
         boss: {
-            name: "Aokiji",
+            name: "Moby Dick",
             hp: 50,
             speed: 120,
-            color: [50, 150, 255],
-            width: 88,
-            height: 56,
-            attacks: ["charge", "spread", "ice_age"],
+            color: [200, 230, 255], // Ice/Whale color
+            width: 120,
+            height: 80,
+            attacks: ["charge", "spread", "ice_age"], // Keeping ice_age for dramatic effect
             enrageAttacks: ["ice_age", "spread", "ice_age", "charge", "spread"],
-            enrageThreshold: 0.4,  // Enrages earlier (40% HP)
+            enrageThreshold: 0.4,
             baseAttackTimer: 2.0,
-            enrageAttackTimer: 1.0, // Relentless at low HP
+            enrageAttackTimer: 1.0,
         },
     },
 ];

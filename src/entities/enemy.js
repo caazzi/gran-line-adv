@@ -29,7 +29,7 @@ function spawnEnemy(k, levelConfig) {
     const scaledFireRate = ENEMY.FIRE_RATE * fireRateMult;
 
     const enemy = k.add([
-        k.sprite("marine"),
+        k.sprite("marine", { anim: "idle" }),
         k.scale((ENEMY.HEIGHT * GAME.PLAYER_SCALE) / GAME.SPRITE_BASE_RES),
         k.pos(GAME.WIDTH + 30, y),
         k.anchor("center"),
@@ -37,6 +37,7 @@ function spawnEnemy(k, levelConfig) {
         k.move(k.LEFT, ENEMY.SPEED * speedMult),
         k.offscreen({ destroy: true }),
         "enemy",
+        "harmful",
         {
             hp: scaledHp,
             fireTimer: k.rand(0.5, scaledFireRate),

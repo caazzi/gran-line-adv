@@ -1,19 +1,20 @@
 // ============================================
 // Victory Scene — Game Complete
 // ============================================
-import { GAME } from "../config.js";
+import { Z_LAYERS, GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
 import { addToLeaderboard, renderLeaderboard } from "../systems/leaderboard.js";
 import { stopBGM, playVictoryJingle } from "../systems/audio.js";
+import { state } from "../state.js";
 
 export function victoryScene(k) {
-    return ({ score = 0 } = {}) => {
+    return () => {
         // Stop level BGM and play victory jingle
         stopBGM();
         playVictoryJingle(k);
 
         // Auto-save to leaderboard
-        addToLeaderboard("Pirata", score);
+        addToLeaderboard("Pirata", state.score);
 
         // Golden background
         k.add([
@@ -45,7 +46,7 @@ export function victoryScene(k) {
             k.color(255, 215, 0),
             k.pos(GAME.WIDTH / 2, 80),
             k.anchor("center"),
-            k.z(10),
+            k.z(Z_LAYERS.EFFECTS),
         ]);
 
         // Title drop shadow
@@ -55,7 +56,7 @@ export function victoryScene(k) {
             k.color(60, 40, 0),
             k.pos(GAME.WIDTH / 2 + 3, 80 + 3),
             k.anchor("center"),
-            k.z(9),
+            k.z(Z_LAYERS.EFFECTS - 1),
         ]);
 
         k.add([
@@ -66,7 +67,7 @@ export function victoryScene(k) {
         ]);
 
         // LocalStorage Highest Bounty logic
-        const currentBounty = score * 1000;
+        const currentBounty = state.score * 1000;
         let highestBounty = parseInt(localStorage.getItem("highestBounty") || "0");
         let isNewRecord = false;
 
@@ -139,11 +140,11 @@ export function victoryScene(k) {
                 k,
                 "🔄 Jogar de Novo",
                 k.vec2(GAME.WIDTH / 2, GAME.HEIGHT - 120),
-                () => k.go("game", { levelIndex: 0, score: 0 })
+                () => { state.reset(); k.go("game"); }
             );
             btnContainer.add(retryBtn);
 
-            k.onKeyPress("enter", () => k.go("game", { levelIndex: 0, score: 0 }));
+            k.onKeyPress("enter", () => { state.reset(); k.go("game"); });
 
             // -- Menu Button (Wooden Plank) --
             const menuBtn = createWoodenButton(

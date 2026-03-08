@@ -1,7 +1,8 @@
 // ============================================
 // Obstacles — Rocks, Whirlpools, Sea Kings
 // ============================================
-import { GAME } from "../config.js";
+import { Z_LAYERS, GAME } from "../config.js";
+import { bobbing } from "../utils/components.js";
 
 export function spawnObstacleLoop(k, levelConfig) {
     // Only spawn obstacles if defined in level
@@ -31,60 +32,22 @@ function spawnRandomObstacle(k, availableTypes) {
 }
 
 function spawnReverseMountainRock(k) {
-    const size = k.rand(70, 110);
+    const size = k.rand(160, 260); // Much larger than ships (which are ~100px rendered)
     const y = k.rand(size, GAME.HEIGHT - size);
 
     const rock = k.add([
+        k.sprite("rock"),
+        k.scale(size / 640), // Calculate scale down from 640x640 base based on randomized size
         k.pos(GAME.WIDTH + size, y),
         k.anchor("center"),
-        k.area({ shape: new k.Rect(k.vec2(-size * 0.4, -size * 0.4), size * 0.8, size * 0.8) }),
+        k.area({ shape: new k.Rect(k.vec2(0), 640, 640) }), // Area based on base sprite size
         k.move(k.LEFT, 100),
         k.offscreen({ destroy: true }),
         "obstacle",
+        "harmful",
         "rock",
         { damage: 1 },
-        k.z(10) // stay above water
-    ]);
-
-    // Base large rock structure (dark bluish-gray to fit ocean palette)
-    rock.add([
-        k.polygon([
-            k.vec2(0, -size * 0.8),
-            k.vec2(size * 0.5, -size * 0.2),
-            k.vec2(size * 0.7, size * 0.4),
-            k.vec2(size * 0.2, size * 0.6),
-            k.vec2(-size * 0.4, size * 0.5),
-            k.vec2(-size * 0.6, 0),
-            k.vec2(-size * 0.3, -size * 0.5)
-        ]),
-        k.color(60, 70, 90),
-        k.pos(0, 0),
-    ]);
-
-    // Mid-layer highlight (creates 3D jagged effect)
-    rock.add([
-        k.polygon([
-            k.vec2(0, -size * 0.7),
-            k.vec2(size * 0.3, -size * 0.1),
-            k.vec2(size * 0.4, size * 0.3),
-            k.vec2(-size * 0.1, size * 0.4),
-            k.vec2(-size * 0.3, 0)
-        ]),
-        k.color(80, 95, 120),
-        k.pos(-size * 0.1, 0),
-    ]);
-
-    // Jagged snow cap at the top
-    rock.add([
-        k.polygon([
-            k.vec2(0, -size * 0.82),
-            k.vec2(size * 0.3, -size * 0.5),
-            k.vec2(size * 0.1, -size * 0.4),
-            k.vec2(-size * 0.1, -size * 0.45),
-            k.vec2(-size * 0.25, -size * 0.55)
-        ]),
-        k.color(240, 245, 255), // Snow
-        k.pos(0, 0),
+        k.z(Z_LAYERS.EFFECTS) // stay above water
     ]);
 }
 
@@ -103,6 +66,7 @@ function spawnKnockUpStream(k) {
         k.move(k.LEFT, 150),
         k.offscreen({ destroy: true }),
         "obstacle",
+        "harmful",
         "knock_up_stream",
         { pullStrength: -400 } // Even stronger upward pull
     ]);
@@ -129,119 +93,22 @@ function spawnKnockUpStream(k) {
 }
 
 function spawnSeaKing(k) {
-    const width = 140;
-    const height = 90;
-    const y = k.rand(height, GAME.HEIGHT - height);
+    const size = 300; // Sea Kings are massive
+    const y = k.rand(size / 2, GAME.HEIGHT - size / 2);
 
     const seaKing = k.add([
-        k.pos(GAME.WIDTH + width, y),
-        k.area({ shape: new k.Rect(k.vec2(0), width, height) }),
+        k.sprite("sea_monster"),
+        k.scale(size / 1024), // Assuming the Nano Banana gen resulted in a 1024x1024 res image
+        k.pos(GAME.WIDTH + size, y),
         k.anchor("center"),
+        k.area({ shape: new k.Rect(k.vec2(0), 1024, 1024) }),
         k.move(k.LEFT, 150), // Fast moving
         k.offscreen({ destroy: true }),
         "obstacle",
+        "harmful",
         "sea_king",
         { damage: 2 }, // Does 2 damage instead of 1
-        k.z(20) // Above water
+        k.z(Z_LAYERS.ENEMIES), // Above water
+        bobbing(20, 4)
     ]);
-
-    // Back Dorsal Fins (Dark green, jagged)
-    for (let i = 0; i < 3; i++) {
-        seaKing.add([
-            k.polygon([
-                k.vec2(0, 0),
-                k.vec2(15, -25),
-                k.vec2(30, 0)
-            ]),
-            k.color(15, 80, 50),
-            k.pos(-width / 2 + 10 + (i * 35), -height / 2 + 5),
-        ]);
-    }
-
-    // Main Body Segment (Thick winding snake-like body)
-    seaKing.add([
-        k.rect(width - 20, height, { radius: 30 }),
-        k.color(30, 120, 80), // Sea green
-        k.pos(-width / 2, -height / 2),
-    ]);
-
-    // Underbelly (Lighter green/yellowish curve)
-    seaKing.add([
-        k.rect(width - 30, height / 3, { radius: 15 }),
-        k.color(100, 180, 110),
-        k.pos(-width / 2 + 10, height / 6),
-    ]);
-
-    // Head / Snout (Tapered front)
-    seaKing.add([
-        k.polygon([
-            k.vec2(0, -height / 2 + 10),
-            k.vec2(-30, -10),
-            k.vec2(-40, 20),
-            k.vec2(0, height / 2 - 10)
-        ]),
-        k.color(30, 120, 80),
-        k.pos(-width / 2 + 10, 0),
-    ]);
-
-    // Angry Red Eye with slit pupil
-    const eyeBase = seaKing.add([
-        k.circle(12),
-        k.color(255, 30, 30),
-        k.pos(-width / 2 - 5, -15),
-    ]);
-    eyeBase.add([
-        k.rect(4, 14),
-        k.color(0, 0, 0),
-        k.anchor("center"),
-    ]);
-
-    // Jaw & Sharp Teeth
-    seaKing.add([
-        k.polygon([
-            k.vec2(0, 0),
-            k.vec2(-20, 10),
-            k.vec2(-10, 25),
-            k.vec2(30, 20)
-        ]),
-        k.color(20, 90, 60),
-        k.pos(-width / 2 - 15, 10),
-    ]);
-
-    // Rows of teeth
-    for (let i = 0; i < 4; i++) {
-        seaKing.add([
-            k.polygon([
-                k.vec2(0, 0),
-                k.vec2(6, 0),
-                k.vec2(3, 12)
-            ]),
-            k.color(255, 255, 240),
-            k.pos(-width / 2 - 25 + (i * 12), 15),
-            k.rotate(-15)
-        ]);
-    }
-
-    // Side Fin (flapping animation)
-    const sideFin = seaKing.add([
-        k.polygon([
-            k.vec2(0, 0),
-            k.vec2(-20, 20),
-            k.vec2(10, 30),
-            k.vec2(20, 10)
-        ]),
-        k.color(20, 100, 70),
-        k.pos(-10, 10),
-        k.anchor("center")
-    ]);
-
-    // Bobbing and swimming animation
-    let t = 0;
-    seaKing.onUpdate(() => {
-        t += k.dt() * 4;
-        // Undulating up and down
-        seaKing.pos.y = y + Math.sin(t) * 20;
-        // Flapping fin
-        sideFin.angle = Math.sin(t * 2) * 20;
-    });
 }

@@ -15,6 +15,8 @@ export function spawnBoss(k, bossConfig, onDefeated) {
         k.area({ shape: new k.Rect(k.vec2(0), GAME.SPRITE_BASE_RES, GAME.SPRITE_BASE_RES) }),
         "boss",
         "enemy",
+        "harmful",
+        k.health(bossConfig.hp),
         {
             hp: bossConfig.hp,
             maxHp: bossConfig.hp,

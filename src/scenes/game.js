@@ -1,7 +1,7 @@
 // ============================================
 // Game Scene — Main gameplay
 // ============================================
-import { GAME, LEVELS } from "../config.js";
+import { Z_LAYERS, GAME, LEVELS } from "../config.js";
 import { createPlayer } from "../entities/player.js";
 import { spawnTreasureLoop } from "../entities/treasure.js";
 import { spawnEnemyLoop } from "../entities/enemy.js";
@@ -12,10 +12,11 @@ import { setupHUD } from "../ui/hud.js";
 import { initPools, resetAllPools } from "../systems/pools.js";
 import { setupGameEvents } from "../systems/events.js";
 import { playLevelBGM, playBossFanfare, playBossDefeatedJingle, stopBGM } from "../systems/audio.js";
+import { state } from "../state.js";
 
 export function gameScene(k) {
-    return ({ levelIndex = 0, score = 0 } = {}) => {
-        const levelConfig = LEVELS[levelIndex] || LEVELS[0];
+    return () => {
+        const levelConfig = LEVELS[state.levelIndex] || LEVELS[0];
 
         // ---- Background layers ----
         // Ocean looping pixel art background
@@ -23,7 +24,7 @@ export function gameScene(k) {
             k.sprite("ocean", { width: GAME.WIDTH, height: GAME.HEIGHT, tiled: true }),
             k.pos(0, 0),
             k.fixed(),
-            k.z(-100),
+            k.z(Z_LAYERS.BACKGROUND),
         ]);
 
         // ---- Object Pools ----
@@ -34,7 +35,7 @@ export function gameScene(k) {
         setupGameEvents(k);
 
         // ---- Player ----
-        const player = createPlayer(k, score);
+        const player = createPlayer(k, state.score);
 
         // ---- Level BGM ----
         playLevelBGM(k, levelConfig.id);
@@ -53,7 +54,7 @@ export function gameScene(k) {
             k.anchor("center"),
             k.opacity(0),
             k.fixed(),
-            k.z(200),
+            k.z(Z_LAYERS.HUD),
         ]);
 
         const levelSubtitle = k.add([
@@ -63,7 +64,7 @@ export function gameScene(k) {
             k.anchor("center"),
             k.opacity(0),
             k.fixed(),
-            k.z(200),
+            k.z(Z_LAYERS.HUD),
         ]);
 
         // Fade in, hold, fade out
@@ -107,7 +108,7 @@ export function gameScene(k) {
                     k.anchor("center"),
                     k.opacity(1),
                     k.fixed(),
-                    k.z(100),
+                    k.z(Z_LAYERS.EFFECTS),
                 ]);
 
                 // Fade out warning
@@ -132,14 +133,17 @@ export function gameScene(k) {
                 // Spawn boss
                 spawnBoss(k, levelConfig.boss, () => {
                     // Boss defeated!
-                    player.score += 100;
+                    state.addScore(100);
+                    // Sync player score changes with global state before transitioning
+                    state.score = player.score;
                     playBossDefeatedJingle(k);
-                    const nextLevel = levelIndex + 1;
 
-                    if (nextLevel < LEVELS.length) {
+                    state.nextLevel();
+
+                    if (state.levelIndex < LEVELS.length) {
                         // Transition to next level
                         const victoryText = k.add([
-                            k.text(`${levelConfig.boss.name} DERROTADO!\n\nPróximo: ${LEVELS[nextLevel].name}`, {
+                            k.text(`${levelConfig.boss.name} DERROTADO!\n\nPróximo: ${LEVELS[state.levelIndex].name}`, {
                                 size: 22,
                                 align: "center",
                             }),
@@ -147,15 +151,15 @@ export function gameScene(k) {
                             k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2),
                             k.anchor("center"),
                             k.fixed(),
-                            k.z(100),
+                            k.z(Z_LAYERS.EFFECTS),
                         ]);
 
                         k.wait(3, () => {
-                            k.go("game", { levelIndex: nextLevel, score: player.score });
+                            k.go("game");
                         });
                     } else {
-                        // Game complete!
-                        k.go("victory", { score: player.score });
+                        // Game complete! Go to cutscene first.
+                        k.go("cutscene");
                     }
                 });
             }

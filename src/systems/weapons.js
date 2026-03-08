@@ -3,7 +3,7 @@
 // Extracted from player.js to decouple attack
 // logic from player state + movement logic.
 // ============================================
-import {
+import { Z_LAYERS,
     GAON_CANNON,
     COUP_DE_BURST,
     SOLDIER_DOCK,
@@ -13,6 +13,7 @@ import {
     PLAYER,
     GAME,
 } from "../config.js";
+import { playShootSFX, playExplosionSFX } from "./audio.js";
 import { Pools } from "./pools.js";
 
 // =============================================
@@ -28,7 +29,7 @@ export function spawnGaonBullet(k, origin) {
 // Coup de Burst (E — horizontal beam)
 // =============================================
 export function spawnCoupDeBurst(k, origin) {
-    k.play("explosion", { volume: 0.8 });
+    playExplosionSFX(0.8);
     const burst = k.add([
         k.rect(COUP_DE_BURST.WIDTH, COUP_DE_BURST.HEIGHT),
         k.color(...COUP_DE_BURST.COLOR),
@@ -52,7 +53,7 @@ export function spawnCoupDeBurst(k, origin) {
 // Soldier Dock Cannons (auto-fire after akuma)
 // =============================================
 export function spawnSoldierDockBullets(k, origin) {
-    k.play("shoot", { volume: 0.4 });
+    playShootSFX(0.4);
 
     const b1 = Pools.soldierBullets.get();
     b1.pos.x = origin.x + PLAYER.WIDTH / 2;
@@ -69,7 +70,7 @@ export function spawnSoldierDockBullets(k, origin) {
 // Mera Mera spread fire (auto-fire after akuma)
 // =============================================
 export function spawnMeraMeraBullets(k, origin) {
-    k.play("shoot", { volume: 0.5 });
+    playShootSFX(0.5);
     const angles = [0, -15, 15]; // Straight, upper, lower
 
     angles.forEach(angle => {
@@ -84,7 +85,7 @@ export function spawnMeraMeraBullets(k, origin) {
 // Haoshoku Haki (F — screen clear)
 // =============================================
 export function triggerHaoshokuHaki(k, player) {
-    k.play("explosion", { volume: 0.9, speed: 0.5 });
+    playExplosionSFX(0.9, 0.5);
     k.shake(12);
 
     // Expanding crimson ring
@@ -94,7 +95,7 @@ export function triggerHaoshokuHaki(k, player) {
         k.opacity(0.8),
         k.pos(player.pos.x, player.pos.y),
         k.anchor("center"),
-        k.z(400),
+        k.z(Z_LAYERS.ULTIMATES),
     ]);
 
     let radius = 10;
@@ -112,7 +113,7 @@ export function triggerHaoshokuHaki(k, player) {
         k.opacity(0),
         k.pos(0, 0),
         k.fixed(),
-        k.z(401),
+        k.z(Z_LAYERS.ULTIMATES + 1),
     ]);
 
     let flashed = false;
@@ -137,7 +138,7 @@ export function triggerHaoshokuHaki(k, player) {
                 k.anchor("center"),
                 k.opacity(1),
                 k.lifespan(0.3, { fade: 0.1 }),
-                k.z(405)
+                k.z(Z_LAYERS.ULTIMATES + 5)
             ]);
         }
     });
@@ -149,7 +150,7 @@ export function triggerHaoshokuHaki(k, player) {
 // Yata no Kagami (SPACE while Pika Pika — dash)
 // =============================================
 export function triggerYataNoKagami(k, player) {
-    k.play("shoot", { volume: 0.8, pitch: 1.5 });
+    playShootSFX(0.8, 1.5);
 
     const startX = player.pos.x;
     const startY = player.pos.y;
@@ -169,7 +170,7 @@ export function triggerYataNoKagami(k, player) {
         k.pos(startX - PLAYER.WIDTH / 2, startY),
         k.anchor("left"),
         k.area(),
-        k.z(450),
+        k.z(Z_LAYERS.ULTIMATES + 50),
         "light_beam"
     ]);
 
@@ -180,7 +181,7 @@ export function triggerYataNoKagami(k, player) {
         k.opacity(0.5),
         k.pos(0, 0),
         k.fixed(),
-        k.z(500)
+        k.z(Z_LAYERS.TOP)
     ]);
     flash.onUpdate(() => {
         flash.opacity -= 3 * k.dt();

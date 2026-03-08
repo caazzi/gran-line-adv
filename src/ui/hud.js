@@ -1,4 +1,4 @@
-import { GAME } from "../config.js";
+import { Z_LAYERS, GAME } from "../config.js";
 
 export function setupHUD(k, player, levelConfig) {
     // Top-Left Panel (Bounty & Lives)
@@ -8,7 +8,7 @@ export function setupHUD(k, player, levelConfig) {
         k.opacity(0.8),
         k.pos(10, 10),
         k.fixed(),
-        k.z(199)
+        k.z(Z_LAYERS.HUD - 1)
     ]);
 
     // Bounty
@@ -17,7 +17,7 @@ export function setupHUD(k, player, levelConfig) {
         k.color(255, 215, 0),
         k.pos(20, 22),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Lives
@@ -26,7 +26,7 @@ export function setupHUD(k, player, levelConfig) {
         k.color(255, 80, 80),
         k.pos(20, 50),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Top-Right Panel Container (Level & Cooldowns)
@@ -37,7 +37,7 @@ export function setupHUD(k, player, levelConfig) {
         k.pos(GAME.WIDTH - 10, 10),
         k.anchor("topright"),
         k.fixed(),
-        k.z(199)
+        k.z(Z_LAYERS.HUD - 1)
     ]);
 
     // Level
@@ -47,7 +47,7 @@ export function setupHUD(k, player, levelConfig) {
         k.pos(GAME.WIDTH - 20, 24),
         k.anchor("topright"),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Coup de Burst cooldown indicator
@@ -57,7 +57,7 @@ export function setupHUD(k, player, levelConfig) {
         k.pos(GAME.WIDTH - 20, 46),
         k.anchor("topright"),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Soldier Dock indicator
@@ -67,7 +67,7 @@ export function setupHUD(k, player, levelConfig) {
         k.pos(GAME.WIDTH - 20, 66),
         k.anchor("topright"),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Mera Mera / Bari Bari shared ability indicator
@@ -77,7 +77,7 @@ export function setupHUD(k, player, levelConfig) {
         k.pos(GAME.WIDTH - 20, 86),
         k.anchor("topright"),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Haoshoku Haki cooldown indicator
@@ -87,7 +87,7 @@ export function setupHUD(k, player, levelConfig) {
         k.pos(GAME.WIDTH - 20, 106),
         k.anchor("topright"),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     // Level timer / progress bar background
@@ -96,7 +96,7 @@ export function setupHUD(k, player, levelConfig) {
         k.color(40, 40, 60),
         k.pos(16, GAME.HEIGHT - 16),
         k.fixed(),
-        k.z(200),
+        k.z(Z_LAYERS.HUD),
     ]);
 
     const progressBar = k.add([
@@ -104,7 +104,7 @@ export function setupHUD(k, player, levelConfig) {
         k.color(50, 200, 100),
         k.pos(16, GAME.HEIGHT - 16),
         k.fixed(),
-        k.z(201),
+        k.z(Z_LAYERS.HUD + 1),
     ]);
 
     // Return the update HUD hook

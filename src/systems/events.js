@@ -20,20 +20,20 @@
 export function setupGameEvents(k) {
     // -- Entity Killed: play sound + spawn explosion particles --
     k.on("entity_killed", (data) => {
-        k.play("explosion", { volume: 0.6 });
+        playExplosionSFX(0.6);
         k.shake(2);
     });
 
     // -- Player Damaged: screen shake --
     k.on("player_damaged", (data) => {
         k.shake(4);
-        k.play("explosion", { volume: 0.4 });
+        playExplosionSFX(0.4);
     });
 
     // -- Boss Defeated: big explosion --
     k.on("boss_defeated", (data) => {
         k.shake(12);
-        k.play("explosion", { volume: 1.0 });
+        playExplosionSFX(1.0);
     });
 }
 

@@ -1,18 +1,19 @@
 // ============================================
 // Game Over Scene
 // ============================================
-import { GAME } from "../config.js";
+import { Z_LAYERS, GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
 import { addToLeaderboard, renderLeaderboard } from "../systems/leaderboard.js";
 import { stopBGM } from "../systems/audio.js";
+import { state } from "../state.js";
 
 export function gameOverScene(k) {
-    return ({ score = 0, level = 1 } = {}) => {
+    return () => {
         // Stop level BGM
         stopBGM();
 
         // Auto-save to leaderboard
-        addToLeaderboard("Pirata", score);
+        addToLeaderboard("Pirata", state.score);
 
         // Dark background
         k.add([
@@ -38,7 +39,7 @@ export function gameOverScene(k) {
             k.color(200, 30, 30),
             k.pos(GAME.WIDTH / 2, 110),
             k.anchor("center"),
-            k.z(10),
+            k.z(Z_LAYERS.EFFECTS),
         ]);
 
         // Title drop shadow
@@ -48,7 +49,7 @@ export function gameOverScene(k) {
             k.color(30, 0, 0),
             k.pos(GAME.WIDTH / 2 + 4, 110 + 4),
             k.anchor("center"),
-            k.z(9),
+            k.z(Z_LAYERS.EFFECTS - 1),
         ]);
 
         // Sinking ship
@@ -70,7 +71,7 @@ export function gameOverScene(k) {
         });
 
         // LocalStorage Highest Bounty logic
-        const currentBounty = score * 1000;
+        const currentBounty = state.score * 1000;
         let highestBounty = parseInt(localStorage.getItem("highestBounty") || "0");
         let isNewRecord = false;
 
@@ -149,7 +150,7 @@ export function gameOverScene(k) {
         }
 
         k.add([
-            k.text(`Nível alcançado: ${level}`, { size: 18, font: "Outfit" }),
+            k.text(`Nível alcançado: ${state.levelIndex + 1}`, { size: 18, font: "Outfit" }),
             k.color(255, 255, 255),
             k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 200),
             k.anchor("center"),
@@ -163,11 +164,11 @@ export function gameOverScene(k) {
             k,
             "🔄 Tentar de Novo",
             k.vec2(GAME.WIDTH / 2, GAME.HEIGHT - 120),
-            () => k.go("game", { levelIndex: 0, score: 0 })
+            () => { state.reset(); k.go("game"); }
         );
 
-        k.onKeyPress("enter", () => k.go("game", { levelIndex: 0, score: 0 }));
-        k.onKeyPress("space", () => k.go("game", { levelIndex: 0, score: 0 }));
+        k.onKeyPress("enter", () => { state.reset(); k.go("game"); });
+        k.onKeyPress("space", () => { state.reset(); k.go("game"); });
 
         // -- Menu Button (Wooden Plank) --
         createWoodenButton(

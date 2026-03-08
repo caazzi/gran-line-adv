@@ -22,7 +22,7 @@ import {
 
 export function createPlayer(k, initialScore = 0) {
     const sunny = k.add([
-        k.sprite("sunny"),
+        k.sprite("sunny", { anim: "idle" }),
         k.scale((PLAYER.HEIGHT * GAME.PLAYER_SCALE) / GAME.SPRITE_BASE_RES),
         k.pos(100, GAME.HEIGHT / 2),
         k.anchor("center"),

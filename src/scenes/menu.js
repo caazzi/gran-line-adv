@@ -1,8 +1,9 @@
 // ============================================
 // Menu Scene — Title Screen
 // ============================================
-import { GAME } from "../config.js";
+import { Z_LAYERS, GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
+import { state } from "../state.js";
 
 export function menuScene(k) {
     return () => {
@@ -44,7 +45,7 @@ export function menuScene(k) {
             k.color(255, 215, 0),
             k.pos(GAME.WIDTH / 2, 110),
             k.anchor("center"),
-            k.z(10),
+            k.z(Z_LAYERS.EFFECTS),
         ]);
 
         // Title drop shadow
@@ -54,7 +55,7 @@ export function menuScene(k) {
             k.color(30, 20, 10),
             k.pos(GAME.WIDTH / 2 + 3, 110 + 3),
             k.anchor("center"),
-            k.z(9),
+            k.z(Z_LAYERS.EFFECTS - 1),
         ]);
 
         k.add([
@@ -63,7 +64,7 @@ export function menuScene(k) {
             k.color(255, 100, 30),
             k.pos(GAME.WIDTH / 2, 175),
             k.anchor("center"),
-            k.z(10),
+            k.z(Z_LAYERS.EFFECTS),
         ]);
 
         // Subtitle drop shadow
@@ -73,7 +74,7 @@ export function menuScene(k) {
             k.color(40, 10, 5),
             k.pos(GAME.WIDTH / 2 + 3, 175 + 3),
             k.anchor("center"),
-            k.z(9),
+            k.z(Z_LAYERS.EFFECTS - 1),
         ]);
 
         // Subtitle
@@ -108,7 +109,8 @@ export function menuScene(k) {
         const btnY = GAME.HEIGHT - 120;
 
         function startGame() {
-            k.go("game", { levelIndex: 0, score: 0 });
+            state.reset();
+            k.go("game");
         }
 
         const btnGroup = createWoodenButton(

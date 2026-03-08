@@ -2,7 +2,7 @@
 // Global Object Pools
 // ============================================
 import { createPool } from "../utils/pool.js";
-import { GAON_CANNON, MERA_MERA, SOLDIER_DOCK, COUP_DE_BURST, ENEMY, GAME, PLAYER } from "../config.js";
+import { Z_LAYERS, GAON_CANNON, MERA_MERA, SOLDIER_DOCK, COUP_DE_BURST, ENEMY, GAME, PLAYER } from "../config.js";
 
 // Export the instances so other files can just import Pools.particles, etc.
 export const Pools = {
@@ -74,7 +74,7 @@ export function initPools(k) {
             k.color(255, 150, 50),
             k.opacity(0.6),
             k.anchor("center"),
-            k.z(-1)
+            k.z(Z_LAYERS.POOL_IDLE)
         ]);
 
         return b;
@@ -125,8 +125,9 @@ export function initPools(k) {
             k.color(255, 50, 50),
             k.pos(-9999, -9999),
             k.anchor("center"),
-            k.area(),
+            k.area({ shape: new k.Rect(k.vec2(0), ENEMY.WIDTH, ENEMY.HEIGHT) }),
             "enemy_bullet",
+            "harmful",
             { damage: ENEMY.BULLET_DAMAGE }
         ]);
 
@@ -135,7 +136,7 @@ export function initPools(k) {
             k.circle(4),
             k.color(255, 255, 150),
             k.anchor("center"),
-            k.z(1)
+            k.z(Z_LAYERS.PROJECTILES)
         ]);
 
         return b;

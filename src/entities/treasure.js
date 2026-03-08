@@ -24,8 +24,8 @@ function spawnTreasure(k, levelConfig = {}) {
     const speedMult = levelConfig.treasureSpeedMult || 1;
 
     let config = { ...TREASURE.COIN, POINTS: coinValue }; // Use level-scaled coin value
-    let spriteName = "coin";
-    let typeTag = "coin";
+    let spriteName = "chest";
+    let typeTag = "coin"; // keep logic tag as coin
 
     if (isAkuma) {
         // Roll for specific fruit (Ultra Rare Pika Pika)
@@ -52,11 +52,11 @@ function spawnTreasure(k, levelConfig = {}) {
     const y = k.rand(30, GAME.HEIGHT - 30);
 
     const treasure = k.add([
-        k.sprite(spriteName),
-        k.scale((config.SIZE * GAME.TREASURE_SCALE) / GAME.SPRITE_BASE_RES),
+        k.sprite(spriteName, { anim: "idle" }),
+        k.scale((config.SIZE * GAME.TREASURE_SCALE) / 320), // 320 is height of a single frame
         k.pos(GAME.WIDTH + 20, y),
         k.anchor("center"),
-        k.area({ shape: new k.Rect(k.vec2(0), GAME.SPRITE_BASE_RES, GAME.SPRITE_BASE_RES) }),
+        k.area({ shape: new k.Rect(k.vec2(0), 320, 320) }), // Hitbox based on a single frame length
         k.move(k.LEFT, TREASURE.SPEED * speedMult),
         k.offscreen({ destroy: true }),
         typeTag, // Generic tag will be the specific fruit name

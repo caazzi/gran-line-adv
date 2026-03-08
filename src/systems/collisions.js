@@ -1,11 +1,14 @@
-import { GAME, ENEMY, PLAYER } from "../config.js";
+import { Z_LAYERS, GAME, ENEMY, PLAYER, BARI_BARI, PIKA_PIKA } from "../config.js";
 import { activateSoldierDock } from "../entities/player.js";
 import { Pools } from "./pools.js";
-import { playFruitSFX } from "./audio.js";
+import { playFruitSFX, playCoinSFX, playExplosionSFX } from "./audio.js";
 
 export function setupCollisions(k, player, levelConfig) {
     // Player collects treasure
     k.onCollide("player", "treasure", (p, t) => {
+        if (t.isCollected) return;
+        t.isCollected = true;
+
         player.score += t.points;
 
         // Apply Akuma no Mi effect based on tag
@@ -30,7 +33,7 @@ export function setupCollisions(k, player, levelConfig) {
                     k.color(50, 255, 150),
                     k.opacity(0.4),
                     k.pos(0, 0),
-                    k.z(50),
+                    k.z(Z_LAYERS.PROJECTILES),
                 ]);
 
                 let time = 0;
@@ -56,7 +59,7 @@ export function setupCollisions(k, player, levelConfig) {
                 k.opacity(0.4),
                 k.pos(0, 0),
                 k.fixed(),
-                k.z(500),
+                k.z(Z_LAYERS.TOP),
             ]);
             flashOverlay.onUpdate(() => {
                 flashOverlay.opacity -= 2 * k.dt();
@@ -85,7 +88,7 @@ export function setupCollisions(k, player, levelConfig) {
             k.pos(t.pos.x, t.pos.y - 15),
             k.anchor("center"),
             k.opacity(1),
-            k.z(300),
+            k.z(Z_LAYERS.POST_HUD),
             k.move(k.UP, 60),
         ]);
         scoreText.onUpdate(() => {
@@ -93,7 +96,18 @@ export function setupCollisions(k, player, levelConfig) {
             if (scoreText.opacity <= 0) scoreText.destroy();
         });
 
-        t.destroy();
+        if (t.is("coin")) {
+            // stop horizontal movement to play the animation in place
+            t.unuse("move");
+            t.play("open");
+
+            // Wait based on animation speed before destroying
+            k.wait(0.6, () => {
+                if (t.exists()) t.destroy();
+            });
+        } else {
+            t.destroy();
+        }
     });
 
     // Player bullet hits enemy
@@ -116,7 +130,7 @@ export function setupCollisions(k, player, levelConfig) {
             k.pos(enemy.pos.x, enemy.pos.y - 10),
             k.anchor("center"),
             k.opacity(1),
-            k.z(300),
+            k.z(Z_LAYERS.POST_HUD),
             k.move(k.UP, 80), // Float upwards
         ]);
 
@@ -144,11 +158,12 @@ export function setupCollisions(k, player, levelConfig) {
         // Enemy dies (non-boss, boss handles its own death)
         if (enemy.hp <= 0 && !enemy.is("boss")) {
             player.score += 20;
-            k.play("explosion", { volume: 0.6 });
+            playCoinSFX(0.5);
 
             // Heart Recovery Mechanic (Heal 1 up to MAX)
             if (player.exists() && player.lives < PLAYER.LIVES) {
                 player.lives++;
+                playExplosionSFX(0.6);
 
                 // +1 HP Visual Effect
                 const healText = k.add([
@@ -184,28 +199,19 @@ export function setupCollisions(k, player, levelConfig) {
         }
     });
 
-    // Enemy bullet hits player
-    k.onCollide("enemy_bullet", "player", (bullet, p) => {
-        bullet.destroy();
-        handlePlayerDamage(k, player, bullet.damage, levelConfig);
-    });
-
-    // Obstacle hits player
-    k.onCollide("obstacle", "player", (obstacle, p) => {
+    // Harmful objects hit player (Enemy Bullets, Enemies, Obstacles)
+    k.onCollide("harmful", "player", (harmfulObj, p) => {
         // Knock up stream doesn't deal damage, it just thrusts
-        if (obstacle.is("knock_up_stream")) return;
+        if (harmfulObj.is("knock_up_stream")) return;
 
-        handlePlayerDamage(k, player, obstacle.damage, levelConfig);
+        // Bosses only damage via bullets, not via body collision
+        if (harmfulObj.is("boss")) return;
 
-        // Destroy rocks/sea kings on impact
-        obstacle.destroy();
-    });
+        const damage = harmfulObj.damage || 1;
+        handlePlayerDamage(k, player, damage, levelConfig);
 
-    // Enemy ship collides with player
-    k.onCollide("enemy", "player", (enemy, p) => {
-        if (enemy.is("boss")) return; // boss only damages via bullets
-        handlePlayerDamage(k, player, 1, levelConfig);
-        enemy.destroy();
+        // Destroy bullets, normal enemies, and objects upon impact
+        harmfulObj.destroy();
     });
 }
 
@@ -214,7 +220,7 @@ function handlePlayerDamage(k, player, damageAmount, levelConfig) {
 
     player.lives -= damageAmount;
     player.invincible = true;
-    k.play("explosion", { volume: 0.4 });
+    playExplosionSFX(0.4);
 
     // Player Floating Damage Text
     const dmgText = k.add([
@@ -223,7 +229,7 @@ function handlePlayerDamage(k, player, damageAmount, levelConfig) {
         k.pos(player.pos.x, player.pos.y - 20),
         k.anchor("center"),
         k.opacity(1),
-        k.z(300),
+        k.z(Z_LAYERS.POST_HUD),
         k.scale(1),
     ]);
 

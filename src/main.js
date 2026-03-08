@@ -3,9 +3,11 @@
 // ============================================
 import kaplay from "kaplay";
 import { GAME } from "./config.js";
+import { loadAssets } from "./utils/assets.js";
 import { menuScene } from "./scenes/menu.js";
 import { gameScene } from "./scenes/game.js";
 import { gameOverScene } from "./scenes/gameOver.js";
+import { cutsceneScene } from "./scenes/cutscene.js";
 import { victoryScene } from "./scenes/victory.js";
 
 
@@ -14,6 +16,7 @@ import { victoryScene } from "./scenes/victory.js";
 const k = kaplay({
     width: GAME.WIDTH,
     height: GAME.HEIGHT,
+    letterbox: true,
     background: GAME.BACKGROUND,
     crisp: true,
     canvas: document.querySelector("canvas") || undefined,
@@ -21,30 +24,14 @@ const k = kaplay({
     font: "Outfit", // Default font for normal text
 });
 
-// Load Fonts from local public directory
-k.loadFont("Bangers", "fonts/bangers.woff");
-k.loadFont("Outfit", "fonts/outfit.woff");
-
-// Load global assets
-k.loadSprite("sunny", "sprites/sunny.png");
-k.loadSprite("marine", "sprites/marine.png");
-k.loadSprite("ocean", "sprites/ocean.png");
-k.loadSprite("coin", "sprites/coin.png");
-k.loadSprite("akuma", "sprites/akuma.png");
-k.loadSprite("boss_alvida", "sprites/boss_alvida.png");
-k.loadSprite("boss_smoker", "sprites/boss_smoker.png");
-k.loadSprite("boss_aokiji", "sprites/boss_aokiji.png");
-
-// Load sound effects and BGM
-k.loadSound("shoot", "sounds/shoot.wav");
-k.loadSound("coin", "sounds/coin.wav");
-k.loadSound("explosion", "sounds/explosion.wav");
-k.loadSound("bgm", "sounds/bgm.wav");
+// Load all external assets
+loadAssets(k);
 
 // Register scenes
 k.scene("menu", menuScene(k));
 k.scene("game", gameScene(k));
 k.scene("gameOver", gameOverScene(k));
+k.scene("cutscene", cutsceneScene(k));
 k.scene("victory", victoryScene(k));
 
 // Start at menu
