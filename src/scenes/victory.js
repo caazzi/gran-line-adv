@@ -3,9 +3,18 @@
 // ============================================
 import { GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
+import { addToLeaderboard, renderLeaderboard } from "../systems/leaderboard.js";
+import { stopBGM, playVictoryJingle } from "../systems/audio.js";
 
 export function victoryScene(k) {
     return ({ score = 0 } = {}) => {
+        // Stop level BGM and play victory jingle
+        stopBGM();
+        playVictoryJingle(k);
+
+        // Auto-save to leaderboard
+        addToLeaderboard("Pirata", score);
+
         // Golden background
         k.add([
             k.rect(GAME.WIDTH, GAME.HEIGHT),
@@ -101,7 +110,7 @@ export function victoryScene(k) {
             k.text("O One Piece... existe!", { size: 18 }),
             k.color(255, 200, 100),
             k.opacity(0),
-            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 70),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 65),
             k.anchor("center"),
         ]);
 
@@ -112,6 +121,9 @@ export function victoryScene(k) {
                 opText.opacity = Math.min(1, opText.opacity + k.dt());
             }
         });
+
+        // -- Leaderboard --
+        renderLeaderboard(k, GAME.HEIGHT / 2 + 90);
 
         // Play again & Menu Buttons
         k.wait(2, () => {
@@ -127,11 +139,11 @@ export function victoryScene(k) {
                 k,
                 "🔄 Jogar de Novo",
                 k.vec2(GAME.WIDTH / 2, GAME.HEIGHT - 120),
-                () => k.go("game", 0)
+                () => k.go("game", { levelIndex: 0, score: 0 })
             );
             btnContainer.add(retryBtn);
 
-            k.onKeyPress("enter", () => k.go("game", 0));
+            k.onKeyPress("enter", () => k.go("game", { levelIndex: 0, score: 0 }));
 
             // -- Menu Button (Wooden Plank) --
             const menuBtn = createWoodenButton(

@@ -89,25 +89,21 @@ Collect glowing fruits to gain temporary powers:
 - [ ] **Sistema de Combo** — acertar inimigos consecutivos sem tomar dano aumenta um multiplicador de score (×2, ×3, ×4...).
 - [ ] **Power-up temporários passivos** — além das Akuma no Mi, adicionar speed boost, double damage, e magnet (atrai moedas automaticamente).
 - [ ] **Sistema de Waves por nível** — em vez de spawn contínuo por 60-90s, dividir cada nível em 3-5 waves com descanso entre elas e um contador "Wave 3/5".
+- [ ] **Cutscene de Vitória** — ao vencer o último boss, exibir uma animação onde o Thousand Sunny navega até uma baía com 4 ilhas (entrando pela esquerda). O navio desliza até o centro das ilhas e encontra o One Piece, com efeito de brilho dourado e revelação dramática antes do leaderboard.
 - [ ] **Mini-boss intermediário** — spawnar um mini-boss (ex: Morgan, Buggy) na metade do tempo de cada nível para quebrar a monotonia.
 - [ ] **Novos tipos de inimigos por nível** — Level 1: barcos pequenos; Level 2: fragatas com escudo; Level 3: navios de guerra que atiram em 3 direções.
 - [ ] **Boss com fases múltiplas** — ao invés de uma única barra de HP, dividir em 2-3 fases com cutscenes curtas e mudanças visuais (ex: Smoker ganha aura, Aokiji congela a tela parcialmente).
 
 ### 🏗️ Infraestrutura & QoL
 
-- [ ] **Pause Menu** — ESC para pausar com opções de continuar, reiniciar, e voltar ao menu.
-- [ ] **Settings Screen** — controle de volume (BGM e SFX separados), toggle de screen shake, e rebind de teclas.
-- [ ] **Leaderboard local** — armazenar os top 5 scores com nome do jogador via `localStorage`.
-- [ ] **Tutorial interativo** — no primeiro jogo, exibir tooltips com os controles conforme o jogador avança.
-- [ ] **i18n** — suporte a Português e Inglês com toggle no menu.
-- [ ] **Mobile touch controls** — joystick virtual e botões de ataque para jogar no celular.
+- [x] **Leaderboard local** — armazenar os top 5 scores com nome do jogador via `localStorage`.
 
 ### 🎵 Áudio
 
-- [ ] **SFX para cada Akuma no Mi** — som único ao coletar cada fruta.
-- [ ] **Victory jingle** — fanfarra curta ao derrotar o boss.
-- [ ] **Boss entrance fanfare** — som dramático quando o boss aparece.
-- [ ] **BGM diferente por nível** — cada mar tem sua trilha temática.
+- [x] **SFX para cada Akuma no Mi** — som único ao coletar cada fruta.
+- [x] **Victory jingle** — fanfarra curta ao derrotar o boss.
+- [x] **Boss entrance fanfare** — som dramático quando o boss aparece.
+- [x] **BGM diferente por nível** — cada mar tem sua trilha temática.
 
 ---
 

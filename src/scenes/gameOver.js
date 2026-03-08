@@ -3,9 +3,17 @@
 // ============================================
 import { GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
+import { addToLeaderboard, renderLeaderboard } from "../systems/leaderboard.js";
+import { stopBGM } from "../systems/audio.js";
 
 export function gameOverScene(k) {
     return ({ score = 0, level = 1 } = {}) => {
+        // Stop level BGM
+        stopBGM();
+
+        // Auto-save to leaderboard
+        addToLeaderboard("Pirata", score);
+
         // Dark background
         k.add([
             k.rect(GAME.WIDTH, GAME.HEIGHT),
@@ -143,20 +151,23 @@ export function gameOverScene(k) {
         k.add([
             k.text(`Nível alcançado: ${level}`, { size: 18, font: "Outfit" }),
             k.color(255, 255, 255),
-            k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 170),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 200),
             k.anchor("center"),
         ]);
+
+        // -- Leaderboard --
+        renderLeaderboard(k, GAME.HEIGHT - 180);
 
         // -- Retry Button (Wooden Plank) --
         createWoodenButton(
             k,
             "🔄 Tentar de Novo",
             k.vec2(GAME.WIDTH / 2, GAME.HEIGHT - 120),
-            () => k.go("game", 0)
+            () => k.go("game", { levelIndex: 0, score: 0 })
         );
 
-        k.onKeyPress("enter", () => k.go("game", 0));
-        k.onKeyPress("space", () => k.go("game", 0));
+        k.onKeyPress("enter", () => k.go("game", { levelIndex: 0, score: 0 }));
+        k.onKeyPress("space", () => k.go("game", { levelIndex: 0, score: 0 }));
 
         // -- Menu Button (Wooden Plank) --
         createWoodenButton(

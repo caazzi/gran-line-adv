@@ -4,8 +4,6 @@
 import { GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
 
-let bgmStarted = false;
-
 export function menuScene(k) {
     return () => {
         // Background
@@ -110,11 +108,7 @@ export function menuScene(k) {
         const btnY = GAME.HEIGHT - 120;
 
         function startGame() {
-            if (!bgmStarted) {
-                k.play("bgm", { loop: true, volume: 0.15 });
-                bgmStarted = true;
-            }
-            k.go("game", 0);
+            k.go("game", { levelIndex: 0, score: 0 });
         }
 
         const btnGroup = createWoodenButton(

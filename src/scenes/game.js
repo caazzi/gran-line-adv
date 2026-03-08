@@ -11,6 +11,7 @@ import { setupCollisions } from "../systems/collisions.js";
 import { setupHUD } from "../ui/hud.js";
 import { initPools, resetAllPools } from "../systems/pools.js";
 import { setupGameEvents } from "../systems/events.js";
+import { playLevelBGM, playBossFanfare, playBossDefeatedJingle, stopBGM } from "../systems/audio.js";
 
 export function gameScene(k) {
     return ({ levelIndex = 0, score = 0 } = {}) => {
@@ -34,6 +35,9 @@ export function gameScene(k) {
 
         // ---- Player ----
         const player = createPlayer(k, score);
+
+        // ---- Level BGM ----
+        playLevelBGM(k, levelConfig.id);
 
         // ---- Spawning systems ----
         spawnTreasureLoop(k, levelConfig);
@@ -116,6 +120,9 @@ export function gameScene(k) {
 
                 k.shake(10);
 
+                // Boss entrance fanfare
+                playBossFanfare(k);
+
                 // Destroy all remaining regular enemies and obstacles
                 k.get("enemy").forEach((e) => {
                     if (!e.is("boss")) e.destroy();
@@ -126,6 +133,7 @@ export function gameScene(k) {
                 spawnBoss(k, levelConfig.boss, () => {
                     // Boss defeated!
                     player.score += 100;
+                    playBossDefeatedJingle(k);
                     const nextLevel = levelIndex + 1;
 
                     if (nextLevel < LEVELS.length) {

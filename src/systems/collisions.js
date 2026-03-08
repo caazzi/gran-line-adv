@@ -1,6 +1,7 @@
 import { GAME, ENEMY, PLAYER } from "../config.js";
 import { activateSoldierDock } from "../entities/player.js";
 import { Pools } from "./pools.js";
+import { playFruitSFX } from "./audio.js";
 
 export function setupCollisions(k, player, levelConfig) {
     // Player collects treasure
@@ -10,6 +11,8 @@ export function setupCollisions(k, player, levelConfig) {
         // Apply Akuma no Mi effect based on tag
         if (t.is("akuma") || t.is("mera_mera") || t.is("bari_bari") || t.is("pika_pika")) {
             let flashColor = [148, 0, 211]; // Default purple
+            const fruitTag = t.is("mera_mera") ? "mera_mera" : t.is("bari_bari") ? "bari_bari" : t.is("pika_pika") ? "pika_pika" : "akuma";
+            playFruitSFX(k, fruitTag);
 
             if (t.is("mera_mera")) {
                 player.meraMeraActive = true;
