@@ -9,47 +9,9 @@ vi.mock("../systems/audio.js", () => ({
 import { damageEnemy } from "./damage.js";
 import { Pools } from "./pools.js";
 import { state } from "../state.js";
-
-function makeParticle() {
-    return {
-        pos: { x: 0, y: 0 },
-        color: null,
-        opacity: 1,
-        scale: { x: 1, y: 1 },
-        velX: 0,
-        velY: 0,
-        shrinkRate: 1,
-    };
-}
-
-function makeK() {
-    return {
-        Color: { fromArray: (arr) => ({ color: arr }) },
-        UP: { x: 0, y: -1 },
-        wait: (time, cb) => cb(),
-        rand: (min, max) => (min + max) / 2,
-        dt: () => 1 / 60,
-        time: () => 0,
-        shake: () => { },
-        add: vi.fn(() => ({
-            opacity: 1,
-            pos: { x: 0, y: 0 },
-            onUpdate: vi.fn(),
-            destroy: vi.fn(),
-        })),
-        text: (text) => ({ text }),
-        color: (...args) => ({ color: args }),
-        pos: (x, y) => ({ x, y }),
-        anchor: () => ({}),
-        z: () => ({}),
-        move: () => ({}),
-        scale: () => ({}),
-        opacity: () => ({}),
-        circle: () => ({}),
-        rect: () => ({}),
-        lifespan: () => ({}),
-    };
-}
+import { ENEMY } from "../config.js";
+import { makePooledObject } from "../test/factories.js";
+import { makeK as makeKaplay } from "../test/kaplay.js";
 
 function makeEnemy({ hp = 1, boss = false } = {}) {
     let destroyed = false;
@@ -71,8 +33,8 @@ describe('damageEnemy', () => {
 
     beforeEach(() => {
         state.reset();
-        k = makeK();
-        Pools.particles = { get: vi.fn(makeParticle) };
+        k = makeKaplay();
+        Pools.particles = { get: vi.fn(makePooledObject) };
     });
 
     it('kills a non-boss enemy and awards score exactly once', () => {
@@ -100,5 +62,80 @@ describe('damageEnemy', () => {
         expect(enemy.dead).toBe(false);
         expect(enemy.destroy).not.toHaveBeenCalled();
         expect(state.score).toBe(0);
+    });
+});
+
+describe('damageEnemy side effects', () => {
+    beforeEach(() => {
+        state.reset();
+        Pools.particles = { get: vi.fn(makePooledObject) };
+    });
+
+    it('ignores missing, destroyed and already-dead enemies', () => {
+        const k = makeKaplay();
+        const dead = { dead: true, hp: 1, exists: () => true, is: () => false };
+
+        expect(() => damageEnemy(k, null, 1, {})).not.toThrow();
+        expect(() => damageEnemy(k, { hp: 1, exists: () => false, is: () => false }, 1, {})).not.toThrow();
+        damageEnemy(k, dead, 1, {});
+
+        expect(dead.hp).toBe(1);
+        expect(state.score).toBe(0);
+    });
+
+    it('restores a regular enemy to the shared enemy color after the hit flash', () => {
+        const k = makeKaplay();
+        const enemy = makeEnemy({ hp: 5 });
+
+        damageEnemy(k, enemy, 1, {});
+
+        expect(enemy.color).toEqual({ color: [255, 255, 255] });
+        k.runWaits();
+        expect(enemy.color).toEqual({ color: ENEMY.COLOR });
+    });
+
+    it('restores a boss to its own color after the hit flash', () => {
+        const k = makeKaplay();
+        const enemy = makeEnemy({ hp: 5, boss: true });
+
+        damageEnemy(k, enemy, 1, {});
+        k.runWaits();
+
+        expect(enemy.color).toEqual({ color: [255, 100, 150] });
+    });
+
+    it('heals one life when a kill happens below max lives', () => {
+        const k = makeKaplay();
+        const player = k.add(['player', { lives: 3 }]);
+        const enemy = makeEnemy({ hp: 1 });
+
+        damageEnemy(k, enemy, 1, { player, source: 'haki' });
+
+        expect(player.lives).toBe(4);
+        expect(k.objects.some((obj) => obj.text === '+1 ♥')).toBe(true);
+    });
+
+    it('does not heal above the maximum life count', () => {
+        const k = makeKaplay();
+        const player = k.add(['player', { lives: 5 }]);
+        const enemy = makeEnemy({ hp: 1 });
+
+        damageEnemy(k, enemy, 1, { player });
+
+        expect(player.lives).toBe(5);
+    });
+
+    it('fades and destroys its floating damage text', () => {
+        const k = makeKaplay();
+        const enemy = makeEnemy({ hp: 5 });
+
+        damageEnemy(k, enemy, 2, {});
+        const text = k.objects.find((obj) => obj.text === '2');
+        expect(text).toBeDefined();
+
+        k.dtValue = 1;
+        k.runUpdates();
+
+        expect(text.destroyed).toBe(true);
     });
 });

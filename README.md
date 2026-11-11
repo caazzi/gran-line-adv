@@ -33,12 +33,13 @@ This is a fan project, not a finished commercial release.
 Requires Node.js 20 or newer.
 
 ```bash
-npm ci          # install exact dependencies
-npm run dev     # dev server on http://localhost:3256
-npm test        # unit tests (Vitest)
-npm run check   # unit tests + production build
-npm run build   # production build into dist/
-npm run preview # serve the built dist/ locally
+npm ci                # install exact dependencies
+npm run dev           # dev server on http://localhost:3256
+npm test              # unit tests (Vitest)
+npm run test:coverage # unit tests + coverage report
+npm run check         # coverage gate + production build
+npm run build         # production build into dist/
+npm run preview       # serve the built dist/ locally
 ```
 
 ## Telemetry
@@ -73,8 +74,8 @@ metrics.series.filter((series) => series.kind === "counter");
 
 ## Current verification
 
-- `npm ci && npm run check` — clean install, **42 tests in 9 files pass**, production build
-  succeeds.
+- `npm ci && npm run check` — clean install, **166 tests in 26 files pass**, coverage thresholds
+  pass (**93% lines**, 78% branches), production build succeeds.
 - Headless Chromium smoke test — menu renders, `Enter` starts level 1, `P` opens the pause
   overlay, `M` toggles mute, `Space` fires, `R` restarts from pause, no console or page
   errors. The telemetry snapshot shows `app.startup` and `assets.load` closed, `Assets loaded`
@@ -113,7 +114,6 @@ rights holder and want an asset removed, please open an issue.
 
 - Add automated browser tests for the menu → level → boss → victory flow.
 - Verify hitboxes against the scaled sprites (rocks, Sea Kings, bosses, chests).
-- Add CI (GitHub Actions) running `npm run check` on pull requests.
 - Optional: parallax background layers and per-level particle themes.
 - Optional: touch controls and a mobile layout (explicitly out of scope for v0.1.0).
 

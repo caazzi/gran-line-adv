@@ -12,12 +12,14 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "vitest run && vite build"
+    "test:coverage": "vitest run --coverage",
+    "check": "vitest run --coverage && vite build"
   },
   "dependencies": {
     "kaplay": "^3001.0.0"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.12",
     "vite": "^6.4.6",
     "vitest": "^4.1.12"
   }
