@@ -3,7 +3,11 @@
 // ============================================
 import { Z_LAYERS, GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
+import { toggleMute } from "../systems/audio.js";
 import { state } from "../state.js";
+
+const FEEDBACK_URL =
+    "https://github.com/caazzi/gran-line-adv/issues/new?title=Playtest%20feedback";
 
 export function menuScene(k) {
     return () => {
@@ -128,11 +132,40 @@ export function menuScene(k) {
         k.onKeyPress("enter", () => startGame());
         k.onKeyPress("space", () => startGame());
 
+        // H opens the feedback form in a new tab (keyboard only, no touch UI)
+        k.onKeyPress("h", () => {
+            window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
+        });
+
+        // M toggles master volume; the same key is wired in the game scene.
+        k.onKeyPress("m", () => toggleMute(k));
+
+        // Build info
+        k.add([
+            k.text("v0.1.0  ·  Keyboard only", { size: 11 }),
+            k.color(110, 130, 170),
+            k.pos(16, 16),
+        ]);
+
+        k.add([
+            k.text("Unofficial fan project", { size: 10 }),
+            k.color(90, 105, 140),
+            k.pos(GAME.WIDTH - 16, 16),
+            k.anchor("topright"),
+        ]);
+
         // Controls hint
         k.add([
-            k.text("WASD / Setas = Mover  |  Espaço = Gaon Cannon  |  E = Coup de Burst", { size: 11 }),
+            k.text("WASD / Setas = Mover  |  Espaço = Gaon Cannon  |  E = Coup de Burst  |  F = Haki", { size: 11 }),
             k.color(120, 140, 180),
-            k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 30),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 44),
+            k.anchor("center"),
+        ]);
+
+        k.add([
+            k.text("P = Pause  |  M = Mute  |  R = Restart  |  H = Feedback", { size: 11 }),
+            k.color(120, 140, 180),
+            k.pos(GAME.WIDTH / 2, GAME.HEIGHT - 27),
             k.anchor("center"),
         ]);
     };

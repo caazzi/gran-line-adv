@@ -35,6 +35,21 @@ describe('Game Configuration', () => {
             expect(bossNames).toContain("Moby Dick");
         });
 
+        it('each boss should map to a loaded boss sprite', () => {
+            const loadedBossSprites = new Set([
+                'boss_alvida',
+                'boss_smoker',
+                'boss_aokiji',
+            ]);
+
+            LEVELS.forEach(level => {
+                const boss = level.boss;
+                expect(boss.sprite).toBeTypeOf('string');
+                expect(loadedBossSprites.has(boss.sprite)).toBe(true);
+                expect(boss.frameSize).toBe(320);
+            });
+        });
+
         it('bosses should enrage properly when threshold is hit', () => {
             LEVELS.forEach(level => {
                 const boss = level.boss;

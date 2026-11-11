@@ -98,10 +98,10 @@ function spawnSeaKing(k) {
 
     const seaKing = k.add([
         k.sprite("sea_monster"),
-        k.scale(size / 1024), // Assuming the Nano Banana gen resulted in a 1024x1024 res image
+        k.scale(size / GAME.SPRITE_BASE_RES), // sea_monster.png is 640x640
         k.pos(GAME.WIDTH + size, y),
         k.anchor("center"),
-        k.area({ shape: new k.Rect(k.vec2(0), 1024, 1024) }),
+        k.area({ shape: new k.Rect(k.vec2(0), GAME.SPRITE_BASE_RES, GAME.SPRITE_BASE_RES) }),
         k.move(k.LEFT, 150), // Fast moving
         k.offscreen({ destroy: true }),
         "obstacle",

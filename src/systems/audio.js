@@ -9,6 +9,26 @@ const LEVEL_BGM = {
 
 let currentBgm = null;
 
+// Master mute state. Saved volume is restored on unmute.
+let muted = false;
+let savedVolume = 1;
+
+export function isMuted() {
+    return muted;
+}
+
+export function toggleMute(k) {
+    if (muted) {
+        k.setVolume(savedVolume);
+        muted = false;
+    } else {
+        savedVolume = k.getVolume();
+        k.setVolume(0);
+        muted = true;
+    }
+    return muted;
+}
+
 export function playLevelBGM(k, levelId) {
     const cfg = LEVEL_BGM[levelId] || LEVEL_BGM[1];
     if (currentBgm) {

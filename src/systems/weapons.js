@@ -15,6 +15,7 @@ import { Z_LAYERS,
 } from "../config.js";
 import { playShootSFX, playExplosionSFX } from "./audio.js";
 import { Pools } from "./pools.js";
+import { damageEnemy } from "./damage.js";
 
 // =============================================
 // Gaon Cannon (SPACE — default)
@@ -130,11 +131,12 @@ export function triggerHaoshokuHaki(k, player) {
     // Instantly destroy all non-boss enemies
     k.get("enemy").forEach(enemy => {
         if (!enemy.is("boss")) {
-            enemy.hp -= 999;
+            const { x, y } = enemy.pos;
+            damageEnemy(k, enemy, 999, { player, source: "haki" });
             k.add([
                 k.circle(k.rand(10, 20)),
                 k.color(0, 0, 0),
-                k.pos(enemy.pos.x, enemy.pos.y),
+                k.pos(x, y),
                 k.anchor("center"),
                 k.opacity(1),
                 k.lifespan(0.3, { fade: 0.1 }),
@@ -192,7 +194,7 @@ export function triggerYataNoKagami(k, player) {
     k.get("enemy").forEach(enemy => {
         if (enemy.pos.x > startX && enemy.pos.x < player.pos.x + 100) {
             if (Math.abs(enemy.pos.y - startY) < 60) {
-                enemy.hp -= PIKA_PIKA.DAMAGE;
+                damageEnemy(k, enemy, PIKA_PIKA.DAMAGE, { player, source: "pika_pika" });
 
                 for (let i = 0; i < 3; i++) {
                     const spark = Pools.particles.get();

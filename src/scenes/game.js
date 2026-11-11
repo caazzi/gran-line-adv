@@ -10,8 +10,8 @@ import { spawnObstacleLoop } from "../entities/obstacle.js";
 import { setupCollisions } from "../systems/collisions.js";
 import { setupHUD } from "../ui/hud.js";
 import { initPools, resetAllPools } from "../systems/pools.js";
-import { setupGameEvents } from "../systems/events.js";
-import { playLevelBGM, playBossFanfare, playBossDefeatedJingle, stopBGM } from "../systems/audio.js";
+import { playLevelBGM, playBossFanfare, playBossDefeatedJingle, toggleMute, isMuted } from "../systems/audio.js";
+import { pauseState, isPaused, resetPause } from "../systems/pause.js";
 import { state } from "../state.js";
 
 export function gameScene(k) {
@@ -31,11 +31,8 @@ export function gameScene(k) {
         initPools(k);
         resetAllPools(); // Clear stale objects from previous level
 
-        // ---- Event System ----
-        setupGameEvents(k);
-
         // ---- Player ----
-        const player = createPlayer(k, state.score);
+        const player = createPlayer(k);
 
         // ---- Level BGM ----
         playLevelBGM(k, levelConfig.id);
@@ -88,6 +85,103 @@ export function gameScene(k) {
         // ---- HUD ----
         const updateHUD = setupHUD(k, player, levelConfig);
 
+        // ---- Meta controls: Pause (P / Esc), Mute (M), Restart (R) ----
+        let pauseOverlay = [];
+        let pauseMuteLabel = null;
+
+        const refreshPauseMuteLabel = () => {
+            if (pauseMuteLabel && pauseMuteLabel.exists()) {
+                pauseMuteLabel.text = `SOM: ${isMuted() ? "MUDO" : "LIGADO"}`;
+            }
+        };
+
+        const buildPauseOverlay = () => {
+            const overlayZ = Z_LAYERS.TOP;
+            pauseOverlay = [
+                k.add([
+                    k.rect(GAME.WIDTH, GAME.HEIGHT),
+                    k.color(0, 0, 0),
+                    k.opacity(0.7),
+                    k.pos(0, 0),
+                    k.fixed(),
+                    k.z(overlayZ),
+                ]),
+                k.add([
+                    k.text("PAUSADO", { size: 32, font: "Bangers" }),
+                    k.scale(2),
+                    k.color(255, 215, 0),
+                    k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 - 70),
+                    k.anchor("center"),
+                    k.fixed(),
+                    k.z(overlayZ),
+                ]),
+                k.add([
+                    k.text("P / Esc = Continuar\nM = Som\nR = Reiniciar", {
+                        size: 20,
+                        font: "Outfit",
+                        align: "center",
+                    }),
+                    k.color(235, 235, 255),
+                    k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 10),
+                    k.anchor("center"),
+                    k.fixed(),
+                    k.z(overlayZ),
+                ]),
+            ];
+
+            pauseMuteLabel = k.add([
+                k.text(`SOM: ${isMuted() ? "MUDO" : "LIGADO"}`, { size: 16, font: "Outfit" }),
+                k.color(150, 220, 255),
+                k.pos(GAME.WIDTH / 2, GAME.HEIGHT / 2 + 90),
+                k.anchor("center"),
+                k.fixed(),
+                k.z(overlayZ),
+            ]);
+            pauseOverlay.push(pauseMuteLabel);
+        };
+
+        const destroyPauseOverlay = () => {
+            pauseOverlay.forEach((obj) => {
+                if (obj && obj.exists()) obj.destroy();
+            });
+            pauseOverlay = [];
+            pauseMuteLabel = null;
+        };
+
+        const setPausedState = (active) => {
+            pauseState.active = active;
+            k.debug.paused = active;
+            if (active) {
+                if (pauseOverlay.length === 0) buildPauseOverlay();
+            } else {
+                destroyPauseOverlay();
+            }
+        };
+
+        const togglePause = () => {
+            setPausedState(!isPaused());
+        };
+
+        const restartGame = () => {
+            // Clear pause before leaving so the audio context is resumed.
+            resetPause(k);
+            destroyPauseOverlay();
+            state.reset();
+            k.go("game");
+        };
+
+        k.onKeyPress(["p", "escape"], togglePause);
+        k.onKeyPress("m", () => {
+            toggleMute(k);
+            refreshPauseMuteLabel();
+        });
+        k.onKeyPress("r", restartGame);
+
+        k.onSceneLeave(() => {
+            destroyPauseOverlay();
+            resetPause(k);
+        });
+
         // ---- Boss trigger ----
         let bossSpawned = false;
         let levelTimer = 0;
@@ -134,8 +228,6 @@ export function gameScene(k) {
                 spawnBoss(k, levelConfig.boss, () => {
                     // Boss defeated!
                     state.addScore(100);
-                    // Sync player score changes with global state before transitioning
-                    state.score = player.score;
                     playBossDefeatedJingle(k);
 
                     state.nextLevel();

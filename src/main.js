@@ -24,6 +24,12 @@ const k = kaplay({
     font: "Outfit", // Default font for normal text
 });
 
+// Report uncaught runtime errors to the console. Kaplay still renders its
+// own error screen; this handler deliberately does not swallow the error.
+k.onError((err) => {
+    console.error("[gran-line-adventure] runtime error:", err);
+});
+
 // Load all external assets
 loadAssets(k);
 

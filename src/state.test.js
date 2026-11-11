@@ -19,6 +19,12 @@ describe('Global State Management', () => {
         expect(state.score).toBe(200);
     });
 
+    it('should keep a boss bonus after prior score accumulation', () => {
+        state.addScore(50);
+        state.addScore(100); // boss bonus
+        expect(state.score).toBe(150);
+    });
+
     it('should increment level correctly', () => {
         state.nextLevel();
         expect(state.levelIndex).toBe(1);
