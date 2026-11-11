@@ -16,11 +16,17 @@ import { Z_LAYERS,
 import { playShootSFX, playExplosionSFX } from "./audio.js";
 import { Pools } from "./pools.js";
 import { damageEnemy } from "./damage.js";
+import { telemetry } from "./telemetry.js";
+
+function recordWeaponFired(weapon) {
+    telemetry.counter("game.weapon.fired", 1, { weapon });
+}
 
 // =============================================
 // Gaon Cannon (SPACE — default)
 // =============================================
 export function spawnGaonBullet(k, origin) {
+    recordWeaponFired("gaon");
     const b = Pools.gaonBullets.get();
     b.pos.x = origin.x + PLAYER.WIDTH / 2;
     b.pos.y = origin.y;
@@ -30,6 +36,7 @@ export function spawnGaonBullet(k, origin) {
 // Coup de Burst (E — horizontal beam)
 // =============================================
 export function spawnCoupDeBurst(k, origin) {
+    recordWeaponFired("coup_de_burst");
     playExplosionSFX(0.8);
     const burst = k.add([
         k.rect(COUP_DE_BURST.WIDTH, COUP_DE_BURST.HEIGHT),
@@ -54,6 +61,7 @@ export function spawnCoupDeBurst(k, origin) {
 // Soldier Dock Cannons (auto-fire after akuma)
 // =============================================
 export function spawnSoldierDockBullets(k, origin) {
+    recordWeaponFired("soldier_dock");
     playShootSFX(0.4);
 
     const b1 = Pools.soldierBullets.get();
@@ -71,6 +79,7 @@ export function spawnSoldierDockBullets(k, origin) {
 // Mera Mera spread fire (auto-fire after akuma)
 // =============================================
 export function spawnMeraMeraBullets(k, origin) {
+    recordWeaponFired("mera_mera");
     playShootSFX(0.5);
     const angles = [0, -15, 15]; // Straight, upper, lower
 
@@ -86,6 +95,7 @@ export function spawnMeraMeraBullets(k, origin) {
 // Haoshoku Haki (F — screen clear)
 // =============================================
 export function triggerHaoshokuHaki(k, player) {
+    recordWeaponFired("haoshoku_haki");
     playExplosionSFX(0.9, 0.5);
     k.shake(12);
 
@@ -152,6 +162,7 @@ export function triggerHaoshokuHaki(k, player) {
 // Yata no Kagami (SPACE while Pika Pika — dash)
 // =============================================
 export function triggerYataNoKagami(k, player) {
+    recordWeaponFired("yata_no_kagami");
     playShootSFX(0.8, 1.5);
 
     const startX = player.pos.x;

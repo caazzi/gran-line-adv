@@ -41,6 +41,27 @@ npm run build   # production build into dist/
 npm run preview # serve the built dist/ locally
 ```
 
+## Telemetry
+
+Logging uses a small, OTel-shaped layer that lives entirely in memory. It never exports,
+performs network requests, or writes to storage.
+
+- **Records:** severity-numbered logs, spans with trace/span IDs, span events and status,
+  and counter / histogram / gauge series. All buffers are bounded ring buffers.
+- **Inspect:** `window.__telemetry.getSnapshot()` returns `resource`, `logs`, `spans`,
+  `metrics.series`, `activeSpanIds` and dropped-record counts.
+- **Console verbosity:** open the game with `?telemetry=debug`, `trace`, `info`, `warn`,
+  `error` or `off`. The default is `info`.
+- **Cross-cutting helpers:** `telemetry.withAttributes(...)` binds level/boss context once;
+  `recordWeaponFired` and `recordRunEnded` keep repeated events in one place.
+
+```js
+// DevTools console: slowest spans, then the current metric series.
+const { spans, metrics } = window.__telemetry.getSnapshot();
+spans.sort((a, b) => (b.durationMs ?? 0) - (a.durationMs ?? 0));
+metrics.series.filter((series) => series.kind === "counter");
+```
+
 ## Deploy (Netlify Drop)
 
 1. `npm run build`
@@ -52,12 +73,14 @@ npm run preview # serve the built dist/ locally
 
 ## Current verification
 
-- `npm ci && npm run check` — clean install, **31 tests in 7 files pass**, production build
+- `npm ci && npm run check` — clean install, **42 tests in 9 files pass**, production build
   succeeds.
 - Headless Chromium smoke test — menu renders, `Enter` starts level 1, `P` opens the pause
-  overlay, `M` does not crash, `R` restarts from pause, no console or page errors. The fixed
-  footer sits below the canvas (canvas ends at 772px, footer starts at 776.6px on a
-  1280×800 viewport).
+  overlay, `M` toggles mute, `Space` fires, `R` restarts from pause, no console or page
+  errors. The telemetry snapshot shows `app.startup` and `assets.load` closed, `Assets loaded`
+  once, and the expected counters/gauges (`game.level.started`, `game.pause`, `game.resume`,
+  `audio.mute.toggled`, `game.weapon.fired`, `game.run.restarted`). The fixed footer sits
+  below the canvas (canvas ends at 772px, footer starts at 776.6px on a 1280×800 viewport).
 - Boss sprite mapping, score ownership and the shared damage/death path have unit coverage;
   an end-to-end playthrough of boss rendering, score carry-over and Haki / dash kills is
   still pending manual verification.
@@ -81,7 +104,8 @@ rights holder and want an asset removed, please open an issue.
 - `src/config.js` — gameplay constants, levels, bosses.
 - `src/scenes/` — menu, game, game over, victory cutscene, victory.
 - `src/entities/` — player, boss, enemy, treasure, obstacles.
-- `src/systems/` — collisions, weapons, damage, pause, audio, pools, leaderboard.
+- `src/systems/` — collisions, weapons, damage, pause, audio, pools, leaderboard,
+  `telemetry.js` (logs/spans/metrics) and `runTelemetry.js` (shared run-end event).
 - `src/ui/` — HUD and reusable UI components.
 - `src/utils/` — asset loader, object pool, shared components, SFX helpers.
 

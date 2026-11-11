@@ -4,8 +4,19 @@ import { Pools } from "./pools.js";
 import { playFruitSFX, playExplosionSFX } from "./audio.js";
 import { damageEnemy } from "./damage.js";
 import { state } from "../state.js";
+import { telemetry } from "./telemetry.js";
+
+function treasureType(treasure) {
+    if (treasure.is("pika_pika")) return "pika_pika";
+    if (treasure.is("mera_mera")) return "mera_mera";
+    if (treasure.is("bari_bari")) return "bari_bari";
+    if (treasure.is("akuma")) return "akuma";
+    return "coin";
+}
 
 export function setupCollisions(k, player, levelConfig) {
+    const level = telemetry.withAttributes({ "game.level.id": levelConfig.id });
+
     // Player collects treasure
     k.onCollide("player", "treasure", (p, t) => {
         if (t.isCollected) return;
@@ -13,10 +24,25 @@ export function setupCollisions(k, player, levelConfig) {
 
         state.addScore(t.points);
 
+        const collectedType = treasureType(t);
+        level.debug("Treasure collected", {
+            "treasure.type": collectedType,
+            "treasure.points": t.points,
+            "game.score": state.score,
+            "player.lives": player.lives,
+        });
+        level.counter("game.treasure.collected", 1, { "treasure.type": collectedType });
+
         // Apply Akuma no Mi effect based on tag
-        if (t.is("akuma") || t.is("mera_mera") || t.is("bari_bari") || t.is("pika_pika")) {
+        if (collectedType !== "coin") {
             let flashColor = [148, 0, 211]; // Default purple
-            const fruitTag = t.is("mera_mera") ? "mera_mera" : t.is("bari_bari") ? "bari_bari" : t.is("pika_pika") ? "pika_pika" : "akuma";
+            const fruitTag = collectedType;
+            level.info("Devil Fruit activated", {
+                "fruit.type": fruitTag,
+                "game.score": state.score,
+                "player.lives": player.lives,
+            });
+            level.counter("game.fruit.activated", 1, { "fruit.type": fruitTag });
             playFruitSFX(k, fruitTag);
 
             if (t.is("mera_mera")) {
@@ -127,18 +153,26 @@ export function setupCollisions(k, player, levelConfig) {
         if (harmfulObj.is("boss")) return;
 
         const damage = harmfulObj.damage || 1;
-        handlePlayerDamage(k, player, damage, levelConfig);
+        handlePlayerDamage(k, player, damage, levelConfig, level);
 
         // Destroy bullets, normal enemies, and objects upon impact
         harmfulObj.destroy();
     });
 }
 
-function handlePlayerDamage(k, player, damageAmount, levelConfig) {
+function handlePlayerDamage(k, player, damageAmount, levelConfig, level) {
     if (player.invincible || !player.exists() || player.bariBariActive || player.pikaPikaActive) return;
 
     player.lives -= damageAmount;
     player.invincible = true;
+
+    level.info("Player damaged", {
+        "game.damage": damageAmount,
+        "player.lives": player.lives,
+        "game.score": state.score,
+    });
+    level.counter("game.player.damaged");
+    telemetry.gauge("game.player.lives", player.lives);
     playExplosionSFX(0.4);
 
     // Player Floating Damage Text
@@ -180,6 +214,10 @@ function handlePlayerDamage(k, player, damageAmount, levelConfig) {
     });
 
     if (player.lives <= 0) {
+        level.info("Player defeated", {
+            "game.score": state.score,
+            "player.lives": player.lives,
+        });
         k.go("gameOver", { level: levelConfig.id });
     }
 }

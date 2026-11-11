@@ -5,6 +5,7 @@ import { Z_LAYERS, GAME } from "../config.js";
 import { createWoodenButton } from "../ui/components.js";
 import { toggleMute } from "../systems/audio.js";
 import { state } from "../state.js";
+import { telemetry } from "../systems/telemetry.js";
 
 const FEEDBACK_URL =
     "https://github.com/caazzi/gran-line-adv/issues/new?title=Playtest%20feedback";
@@ -114,6 +115,8 @@ export function menuScene(k) {
 
         function startGame() {
             state.reset();
+            telemetry.info("Run started from menu", { "game.score": state.score });
+            telemetry.counter("game.run.started", 1, { source: "menu" });
             k.go("game");
         }
 
@@ -134,11 +137,15 @@ export function menuScene(k) {
 
         // H opens the feedback form in a new tab (keyboard only, no touch UI)
         k.onKeyPress("h", () => {
+            telemetry.info("Feedback link opened");
+            telemetry.counter("ui.feedback.opened");
             window.open(FEEDBACK_URL, "_blank", "noopener,noreferrer");
         });
 
         // M toggles master volume; the same key is wired in the game scene.
-        k.onKeyPress("m", () => toggleMute(k));
+        k.onKeyPress("m", () => {
+            toggleMute(k, { "ui.scene": "menu" });
+        });
 
         // Build info
         k.add([

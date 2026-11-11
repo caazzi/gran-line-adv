@@ -1,9 +1,13 @@
 import { Z_LAYERS, GAME, PLAYER } from "../config.js";
 import { stopBGM } from "../systems/audio.js";
+import { telemetry } from "../systems/telemetry.js";
+import { state } from "../state.js";
 
 export function cutsceneScene(k) {
     return () => {
         stopBGM();
+        telemetry.info("Victory cutscene started", { "game.score": state.score });
+        telemetry.counter("game.cutscene.started");
 
         // 1. Scene Background (Ocean and Sky)
         k.add([

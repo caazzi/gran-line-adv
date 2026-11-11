@@ -6,11 +6,14 @@ import { createWoodenButton } from "../ui/components.js";
 import { addToLeaderboard, renderLeaderboard } from "../systems/leaderboard.js";
 import { stopBGM } from "../systems/audio.js";
 import { state } from "../state.js";
+import { recordRunEnded } from "../systems/runTelemetry.js";
 
 export function gameOverScene(k) {
     return () => {
         // Stop level BGM
         stopBGM();
+
+        recordRunEnded("game_over");
 
         // Auto-save to leaderboard
         addToLeaderboard("Pirata", state.score);

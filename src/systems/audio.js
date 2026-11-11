@@ -1,4 +1,5 @@
 import { zzfx } from "../utils/zzfx.js";
+import { telemetry, errorToAttributes } from "./telemetry.js";
 
 // BGM is kept as an audio file since ZzFX is strictly for short SFX
 const LEVEL_BGM = {
@@ -17,7 +18,8 @@ export function isMuted() {
     return muted;
 }
 
-export function toggleMute(k) {
+export function toggleMute(k, context = {}) {
+    const previous = muted;
     if (muted) {
         k.setVolume(savedVolume);
         muted = false;
@@ -26,6 +28,13 @@ export function toggleMute(k) {
         k.setVolume(0);
         muted = true;
     }
+
+    telemetry.info("Mute toggled", {
+        "audio.muted": muted,
+        "audio.previous": previous,
+        ...context,
+    });
+    telemetry.counter("audio.mute.toggled", 1, context);
     return muted;
 }
 
@@ -38,7 +47,14 @@ export function playLevelBGM(k, levelId) {
     // Only play if bgm is loaded, fail gracefully if missing
     try {
         currentBgm = k.play("bgm", { loop: true, volume: cfg.volume, speed: cfg.speed });
-    } catch (e) { }
+    } catch (error) {
+        telemetry.warn("BGM playback failed", {
+            "audio.track": "bgm",
+            "audio.level": levelId,
+            ...errorToAttributes(error),
+        });
+        telemetry.counter("audio.bgm.failures", 1, { "audio.level": levelId });
+    }
 }
 
 export function stopBGM() {

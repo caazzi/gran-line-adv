@@ -13,10 +13,27 @@ import { initPools, resetAllPools } from "../systems/pools.js";
 import { playLevelBGM, playBossFanfare, playBossDefeatedJingle, toggleMute, isMuted } from "../systems/audio.js";
 import { pauseState, isPaused, resetPause } from "../systems/pause.js";
 import { state } from "../state.js";
+import { telemetry } from "../systems/telemetry.js";
 
 export function gameScene(k) {
     return () => {
         const levelConfig = LEVELS[state.levelIndex] || LEVELS[0];
+
+        const level = telemetry.withAttributes({
+            "game.level.id": levelConfig.id,
+            "game.level.name": levelConfig.name,
+        });
+        const levelStartAttributes = {
+            "game.level.duration_s": levelConfig.duration,
+            "game.boss.name": levelConfig.boss.name,
+            "game.score": state.score,
+        };
+        telemetry.currentSpan()?.setAttributes({
+            ...level.attributes,
+            ...levelStartAttributes,
+        });
+        level.info("Level started", levelStartAttributes);
+        level.counter("game.level.started");
 
         // ---- Background layers ----
         // Ocean looping pixel art background
@@ -33,6 +50,7 @@ export function gameScene(k) {
 
         // ---- Player ----
         const player = createPlayer(k);
+        telemetry.gauge("game.player.lives", player.lives);
 
         // ---- Level BGM ----
         playLevelBGM(k, levelConfig.id);
@@ -156,6 +174,12 @@ export function gameScene(k) {
             } else {
                 destroyPauseOverlay();
             }
+
+            level.info(active ? "Game paused" : "Game resumed", {
+                "game.paused": active,
+                "game.score": state.score,
+            });
+            level.counter(active ? "game.pause" : "game.resume");
         };
 
         const togglePause = () => {
@@ -163,6 +187,12 @@ export function gameScene(k) {
         };
 
         const restartGame = () => {
+            level.info("Run restarted", {
+                "game.score": state.score,
+                "game.player.lives": player.lives,
+            });
+            level.counter("game.run.restarted");
+
             // Clear pause before leaving so the audio context is resumed.
             resetPause(k);
             destroyPauseOverlay();
@@ -172,19 +202,29 @@ export function gameScene(k) {
 
         k.onKeyPress(["p", "escape"], togglePause);
         k.onKeyPress("m", () => {
-            toggleMute(k);
+            toggleMute(k, { "ui.scene": "game" });
             refreshPauseMuteLabel();
         });
         k.onKeyPress("r", restartGame);
 
+        // ---- Boss trigger state ----
+        let bossSpawned = false;
+        let levelTimer = 0;
+        let bossSpan = null;
+
         k.onSceneLeave(() => {
+            level.info("Level ended", {
+                "game.score": state.score,
+                "game.player.lives": player.lives,
+                "game.boss.spawned": bossSpawned,
+            });
+            if (bossSpan && !bossSpan.ended) {
+                bossSpan.setAttribute("boss.defeated", false).end();
+            }
+
             destroyPauseOverlay();
             resetPause(k);
         });
-
-        // ---- Boss trigger ----
-        let bossSpawned = false;
-        let levelTimer = 0;
 
         k.onUpdate(() => {
             updateHUD(levelTimer, bossSpawned);
@@ -193,6 +233,14 @@ export function gameScene(k) {
 
             if (!bossSpawned && levelTimer >= levelConfig.duration) {
                 bossSpawned = true;
+
+                const boss = level.withAttributes({
+                    "boss.name": levelConfig.boss.name,
+                });
+                bossSpan = boss.startSpan("game.boss", { "boss.hp": levelConfig.boss.hp });
+                boss.info("Boss spawned", { "boss.hp": levelConfig.boss.hp });
+                boss.counter("game.boss.spawned");
+                level.histogram("game.level.boss_spawn_time_s", levelTimer);
 
                 // Warning text
                 const warning = k.add([
@@ -228,11 +276,24 @@ export function gameScene(k) {
                 spawnBoss(k, levelConfig.boss, () => {
                     // Boss defeated!
                     state.addScore(100);
+                    bossSpan?.setAttributes({
+                        "boss.defeated": true,
+                        "game.score": state.score,
+                    }).end();
+                    boss.info("Boss defeated", { "game.score": state.score });
+                    boss.counter("game.boss.defeated");
+                    level.histogram("game.level.clear_time_s", levelTimer);
                     playBossDefeatedJingle(k);
 
                     state.nextLevel();
 
                     if (state.levelIndex < LEVELS.length) {
+                        level.info("Level completed", {
+                            "game.next_level.id": LEVELS[state.levelIndex].id,
+                            "game.score": state.score,
+                        });
+                        level.counter("game.level.completed");
+
                         // Transition to next level
                         const victoryText = k.add([
                             k.text(`${levelConfig.boss.name} DERROTADO!\n\nPróximo: ${LEVELS[state.levelIndex].name}`, {
@@ -250,6 +311,11 @@ export function gameScene(k) {
                             k.go("game");
                         });
                     } else {
+                        level.info("Campaign completed", {
+                            "game.score": state.score,
+                        });
+                        level.counter("game.campaign.completed");
+
                         // Game complete! Go to cutscene first.
                         k.go("cutscene");
                     }

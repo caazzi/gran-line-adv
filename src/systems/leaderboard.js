@@ -2,6 +2,7 @@
 // Leaderboard — Top 5 Local Scores
 // Uses localStorage for persistence.
 // ============================================
+import { telemetry, errorToAttributes } from "./telemetry.js";
 
 const STORAGE_KEY = "granline_leaderboard";
 const MAX_ENTRIES = 5;
@@ -18,8 +19,18 @@ export function getLeaderboard() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return [];
-        return JSON.parse(raw);
-    } catch {
+
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+            throw new TypeError("Leaderboard data is not an array");
+        }
+        return parsed;
+    } catch (error) {
+        telemetry.warn("Leaderboard read failed", {
+            "storage.key": STORAGE_KEY,
+            ...errorToAttributes(error),
+        });
+        telemetry.counter("storage.leaderboard.read_errors");
         return [];
     }
 }
@@ -51,7 +62,17 @@ export function addToLeaderboard(name, score) {
     board.push(entry);
     board.sort((a, b) => b.score - a.score);
     const trimmed = board.slice(0, MAX_ENTRIES);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+    } catch (error) {
+        telemetry.warn("Leaderboard write failed", {
+            "storage.key": STORAGE_KEY,
+            ...errorToAttributes(error),
+        });
+        telemetry.counter("storage.leaderboard.write_errors");
+    }
+
     return trimmed;
 }
 
