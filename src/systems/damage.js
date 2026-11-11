@@ -5,6 +5,7 @@ import { ENEMY, PLAYER, Z_LAYERS } from "../config.js";
 import { Pools } from "./pools.js";
 import { playCoinSFX, playExplosionSFX } from "./audio.js";
 import { state } from "../state.js";
+import { telemetry } from "./telemetry.js";
 
 /**
  * Apply damage to an enemy and handle the shared hit/death rules.
@@ -14,6 +15,10 @@ export function damageEnemy(k, enemy, amount, { player, source = "bullet" } = {}
     if (!enemy || !enemy.exists() || enemy.dead) return;
 
     enemy.hp -= amount;
+    telemetry.counter("game.enemy.damage", 1, {
+        source,
+        boss: enemy.is("boss"),
+    });
 
     // White hit flash, restored to the enemy's own color.
     enemy.color = k.Color.fromArray([255, 255, 255]);
@@ -61,11 +66,24 @@ export function damageEnemy(k, enemy, amount, { player, source = "bullet" } = {}
 
     enemy.dead = true;
     state.addScore(20);
+    const killAttributes = {
+        "enemy.source": source,
+        "game.score": state.score,
+    };
+    if (player) killAttributes["player.lives"] = player.lives;
+    telemetry.debug("Enemy defeated", killAttributes);
+    telemetry.counter("game.enemy.defeated", 1, { source });
     playCoinSFX(0.5);
 
     // Heart recovery mechanic (heal 1 up to max)
     if (player && player.exists() && player.lives < PLAYER.LIVES) {
         player.lives++;
+        telemetry.debug("Player healed", {
+            "player.lives": player.lives,
+            "enemy.source": source,
+        });
+        telemetry.counter("game.player.healed");
+        telemetry.gauge("game.player.lives", player.lives);
         playExplosionSFX(0.6);
 
         const healText = k.add([
