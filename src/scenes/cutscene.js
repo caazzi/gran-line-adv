@@ -1,4 +1,4 @@
-import { Z_LAYERS, GAME } from "../config.js";
+import { Z_LAYERS, GAME, PLAYER } from "../config.js";
 import { stopBGM } from "../systems/audio.js";
 
 export function cutsceneScene(k) {
@@ -51,7 +51,9 @@ export function cutsceneScene(k) {
         // 3. The Thousand Sunny
         const sunny = k.add([
             k.sprite("sunny", { anim: "idle" }),
-            k.scale(GAME.PLAYER_SCALE / 2), // Slightly smaller for perspective
+            // Sunny frames are 640px. Target ~120px on screen: slightly larger
+            // than the ~100px gameplay ship so it reads as the hero shot.
+            k.scale((PLAYER.HEIGHT * GAME.PLAYER_SCALE * 1.2) / GAME.SPRITE_BASE_RES),
             k.pos(-100, GAME.HEIGHT / 2 + 50),
             k.anchor("center"),
             k.z(Z_LAYERS.ENEMIES)
@@ -64,7 +66,9 @@ export function cutsceneScene(k) {
                     // Step 2: The One Piece appears
                     const chest = k.add([
                         k.sprite("chest", { anim: "idle" }),
-                        k.scale(3),
+                        // Chest frames are 320px (640px sheet, 2x2 slices).
+                        // Scale to ~120px tall instead of the old ~960px.
+                        k.scale(120 / 320),
                         k.pos(GAME.WIDTH / 2 + 100, GAME.HEIGHT / 2 + 50),
                         k.anchor("center"),
                         k.opacity(0),

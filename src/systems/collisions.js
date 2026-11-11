@@ -1,7 +1,9 @@
-import { Z_LAYERS, GAME, ENEMY, PLAYER, BARI_BARI, PIKA_PIKA } from "../config.js";
+import { Z_LAYERS, GAME, PLAYER } from "../config.js";
 import { activateSoldierDock } from "../entities/player.js";
 import { Pools } from "./pools.js";
-import { playFruitSFX, playCoinSFX, playExplosionSFX } from "./audio.js";
+import { playFruitSFX, playExplosionSFX } from "./audio.js";
+import { damageEnemy } from "./damage.js";
+import { state } from "../state.js";
 
 export function setupCollisions(k, player, levelConfig) {
     // Player collects treasure
@@ -9,7 +11,7 @@ export function setupCollisions(k, player, levelConfig) {
         if (t.isCollected) return;
         t.isCollected = true;
 
-        player.score += t.points;
+        state.addScore(t.points);
 
         // Apply Akuma no Mi effect based on tag
         if (t.is("akuma") || t.is("mera_mera") || t.is("bari_bari") || t.is("pika_pika")) {
@@ -112,91 +114,8 @@ export function setupCollisions(k, player, levelConfig) {
 
     // Player bullet hits enemy
     k.onCollide("player_bullet", "enemy", (bullet, enemy) => {
-        enemy.hp -= bullet.damage;
-
-        enemy.color = k.Color.fromArray([255, 255, 255]);
-        k.wait(0.08, () => {
-            if (enemy.exists()) {
-                enemy.color = enemy.is("boss")
-                    ? k.Color.fromArray(levelConfig.boss.color)
-                    : k.Color.fromArray(ENEMY.COLOR);
-            }
-        });
-
-        // Floating Damage Text
-        const dmgText = k.add([
-            k.text(bullet.damage.toString(), { size: 28, font: "Bangers" }),
-            k.color(255, 50, 50),
-            k.pos(enemy.pos.x, enemy.pos.y - 10),
-            k.anchor("center"),
-            k.opacity(1),
-            k.z(Z_LAYERS.POST_HUD),
-            k.move(k.UP, 80), // Float upwards
-        ]);
-
-        dmgText.onUpdate(() => {
-            dmgText.opacity -= 1.5 * k.dt();
-            if (dmgText.opacity <= 0) dmgText.destroy();
-        });
-
-        // Small hit particles
-        for (let i = 0; i < 3; i++) {
-            const part = Pools.particles.get();
-            part.pos.x = bullet.pos.x;
-            part.pos.y = bullet.pos.y;
-            part.color = k.Color.fromArray([255, 200, 100]);
-            part.opacity = 1;
-            part.scale.x = k.rand(0.4, 0.8);
-            part.scale.y = part.scale.x;
-            part.velX = k.rand(-20, 20);
-            part.velY = k.rand(-20, 20);
-            part.shrinkRate = 3;
-        }
-
+        damageEnemy(k, enemy, bullet.damage, { player, source: "bullet" });
         bullet.destroy();
-
-        // Enemy dies (non-boss, boss handles its own death)
-        if (enemy.hp <= 0 && !enemy.is("boss")) {
-            player.score += 20;
-            playCoinSFX(0.5);
-
-            // Heart Recovery Mechanic (Heal 1 up to MAX)
-            if (player.exists() && player.lives < PLAYER.LIVES) {
-                player.lives++;
-                playExplosionSFX(0.6);
-
-                // +1 HP Visual Effect
-                const healText = k.add([
-                    k.text("+1 ♥", { size: 16 }),
-                    k.color(50, 255, 100), // Green
-                    k.pos(enemy.pos.x, enemy.pos.y - 20),
-                    k.anchor("center"),
-                    k.opacity(1),
-                    "particle",
-                ]);
-                healText.onUpdate(() => {
-                    healText.opacity -= 1.5 * k.dt();
-                    healText.pos.y -= 40 * k.dt();
-                    if (healText.opacity <= 0) healText.destroy();
-                });
-            }
-
-            // Explosion particles
-            for (let i = 0; i < 4; i++) {
-                const part = Pools.particles.get();
-                part.pos.x = enemy.pos.x + k.rand(-15, 15);
-                part.pos.y = enemy.pos.y + k.rand(-10, 10);
-                part.color = k.Color.fromArray([255, k.rand(80, 180), 0]);
-                part.opacity = 1;
-                part.scale.x = k.rand(0.8, 2.0);
-                part.scale.y = part.scale.x;
-                part.velX = 0;
-                part.velY = 0;
-                part.shrinkRate = 2;
-            }
-
-            enemy.destroy();
-        }
     });
 
     // Harmful objects hit player (Enemy Bullets, Enemies, Obstacles)
@@ -261,6 +180,6 @@ function handlePlayerDamage(k, player, damageAmount, levelConfig) {
     });
 
     if (player.lives <= 0) {
-        k.go("gameOver", { score: player.score, level: levelConfig.id });
+        k.go("gameOver", { level: levelConfig.id });
     }
 }

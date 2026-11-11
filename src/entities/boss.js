@@ -5,14 +5,14 @@ import { GAME } from "../config.js";
 import { Pools } from "../systems/pools.js";
 
 export function spawnBoss(k, bossConfig, onDefeated) {
-    const spriteName = "boss_" + bossConfig.name.toLowerCase();
+    const spriteScale = (bossConfig.height * GAME.BOSS_SCALE) / bossConfig.frameSize;
 
     const boss = k.add([
-        k.sprite(spriteName),
-        k.scale((bossConfig.height * GAME.BOSS_SCALE) / GAME.SPRITE_BASE_RES),
+        k.sprite(bossConfig.sprite),
+        k.scale(spriteScale),
         k.pos(GAME.WIDTH + 50, GAME.HEIGHT / 2),
         k.anchor("center"),
-        k.area({ shape: new k.Rect(k.vec2(0), GAME.SPRITE_BASE_RES, GAME.SPRITE_BASE_RES) }),
+        k.area({ shape: new k.Rect(k.vec2(0), bossConfig.frameSize, bossConfig.frameSize) }),
         "boss",
         "enemy",
         "harmful",
@@ -21,6 +21,7 @@ export function spawnBoss(k, bossConfig, onDefeated) {
             hp: bossConfig.hp,
             maxHp: bossConfig.hp,
             bossName: bossConfig.name,
+            bossColor: bossConfig.color,
             speed: bossConfig.speed,
             attacks: bossConfig.attacks,
             attackTimer: 2,
@@ -31,26 +32,33 @@ export function spawnBoss(k, bossConfig, onDefeated) {
         },
     ]);
 
-    // Boss name label
+    // Children of the boss inherit its scale, so counter-scale the UI
+    // elements to keep them readable and their world offsets stable.
+    const uiScale = 1 / spriteScale;
+
+    // Boss name label (~100px above the boss in world units)
     boss.add([
         k.text(bossConfig.name, { size: 14 }),
         k.color(255, 255, 255),
         k.anchor("center"),
-        k.pos(0, -100), // Adjusted slightly higher relative to scaled sprite
+        k.scale(uiScale),
+        k.pos(0, -100 * uiScale),
     ]);
 
-    // HP bar background
+    // HP bar background (~60px above the boss in world units)
     const hpBarBg = boss.add([
         k.rect(bossConfig.width + 20, 8),
         k.color(60, 0, 0),
-        k.pos(-(bossConfig.width + 20) / 2, -60),
+        k.scale(uiScale),
+        k.pos(-((bossConfig.width + 20) / 2) * uiScale, -60 * uiScale),
     ]);
 
     // HP bar fill
     const hpBarFill = boss.add([
         k.rect(bossConfig.width + 20, 8),
         k.color(220, 30, 30),
-        k.pos(-(bossConfig.width + 20) / 2, -60),
+        k.scale(uiScale),
+        k.pos(-((bossConfig.width + 20) / 2) * uiScale, -60 * uiScale),
     ]);
 
     // -- Boss behavior --
@@ -208,8 +216,4 @@ function performBossAttack(k, boss, attackType) {
             }
             break;
     }
-}
-
-function bossWidth(boss) {
-    return boss.width || 72;
 }

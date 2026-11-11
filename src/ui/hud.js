@@ -1,4 +1,5 @@
 import { Z_LAYERS, GAME } from "../config.js";
+import { state } from "../state.js";
 
 export function setupHUD(k, player, levelConfig) {
     // Top-Left Panel (Bounty & Lives)
@@ -111,7 +112,7 @@ export function setupHUD(k, player, levelConfig) {
     return function updateHUD(levelTimer, bossSpawned) {
         if (!player.exists()) return;
 
-        const formattedBounty = Intl.NumberFormat('en-US').format(player.score * 1000);
+        const formattedBounty = Intl.NumberFormat('en-US').format(state.score * 1000);
         bountyText.text = `Bounty: ฿ ${formattedBounty}`;
         livesText.text = `♥ ${"♥".repeat(Math.max(0, player.lives))}`;
 

@@ -139,6 +139,8 @@ export const LEVELS = [
         obstacleSpawnMult: 0.5,   // Half frequency
         boss: {
             name: "Miss Love Duck",
+            sprite: "boss_alvida",
+            frameSize: 320,
             hp: 20,
             speed: 80,
             color: [255, 100, 150], // Pinkish for Alvida's ship
@@ -165,6 +167,8 @@ export const LEVELS = [
         obstacleSpawnMult: 1.0,
         boss: {
             name: "Marine Warship",
+            sprite: "boss_smoker",
+            frameSize: 320,
             hp: 35,
             speed: 100,
             color: [180, 180, 180],
@@ -191,6 +195,8 @@ export const LEVELS = [
         obstacleSpawnMult: 1.3,
         boss: {
             name: "Moby Dick",
+            sprite: "boss_aokiji",
+            frameSize: 320,
             hp: 50,
             speed: 120,
             color: [200, 230, 255], // Ice/Whale color

@@ -11,6 +11,7 @@ import {
     PIKA_PIKA,
     GAME
 } from "../config.js";
+import { isPaused } from "../systems/pause.js";
 import {
     spawnGaonBullet,
     spawnCoupDeBurst,
@@ -20,7 +21,7 @@ import {
     triggerYataNoKagami,
 } from "../systems/weapons.js";
 
-export function createPlayer(k, initialScore = 0) {
+export function createPlayer(k) {
     const sunny = k.add([
         k.sprite("sunny", { anim: "idle" }),
         k.scale((PLAYER.HEIGHT * GAME.PLAYER_SCALE) / GAME.SPRITE_BASE_RES),
@@ -30,7 +31,6 @@ export function createPlayer(k, initialScore = 0) {
         "player",
         {
             lives: PLAYER.LIVES,
-            score: initialScore,
             invincible: false,
             gaonCooldown: 0,
             coupCooldown: 0,
@@ -125,6 +125,7 @@ export function createPlayer(k, initialScore = 0) {
 
     // -- Gaon Cannon / Yata no Kagami (Space) --
     k.onKeyDown("space", () => {
+        if (isPaused()) return;
         if (!sunny.exists()) return;
         const p = sunny;
 
@@ -143,6 +144,7 @@ export function createPlayer(k, initialScore = 0) {
 
     // -- Coup de Burst (E) --
     k.onKeyPress("e", () => {
+        if (isPaused()) return;
         if (!sunny.exists()) return;
         const p = sunny;
         if (p.coupCooldown <= 0) {
@@ -155,6 +157,7 @@ export function createPlayer(k, initialScore = 0) {
 
     // -- Haoshoku Haki (F) --
     k.onKeyPress("f", () => {
+        if (isPaused()) return;
         if (!sunny.exists()) return;
         const p = sunny;
         if (p.hakiCooldown <= 0) {
